@@ -155,17 +155,17 @@ app.delete('/api/pedidos', async (req, res) => {
   res.json({ success: true });
 });
 
-// Servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '/')));
+// Servir arquivos estáticos do frontend da pasta 'public'
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Rotas principais
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Rota do painel de administração
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 const PORT = 3000;
