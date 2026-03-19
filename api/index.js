@@ -155,24 +155,10 @@ app.delete('/api/pedidos', async (req, res) => {
   res.json({ success: true });
 });
 
-// Servir arquivos estáticos do frontend da pasta 'public'
-app.use(express.static(path.join(__dirname, 'public')));
+// O Express em modo "Serverless" na Vercel não precisa servir estáticos (a Vercel faz isso)
+// Basta manter as rotas de API para suprir os dados do banco e Mercado Pago.
 
-// Rotas principais
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Rota do painel de administração
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\n================================`);
-  console.log(`Backend e Frontend rodando com sucesso!`);
-  console.log(`Acesse o site principal: http://localhost:${PORT}`);
-  console.log(`Acesse o painel VIP: http://localhost:${PORT}/admin`);
-  console.log(`================================\n`);
+  console.log(`Servidor de API rodando na porta ${PORT}`);
 });
