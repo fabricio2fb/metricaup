@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '.env.local' });
+﻿require('dotenv').config({ path: '.env.local' });
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
@@ -9,16 +9,16 @@ app.use(cors());
 app.use(express.json());
 
 const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
-// Uso da chave de serviço para ter plenos direitos sem expor ao frontend
+// Uso da chave de serviÃ§o para ter plenos direitos sem expor ao frontend
 const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
 
 if(!SUPABASE_URL || !SUPABASE_KEY) {
-  console.warn('AVISO: Faltam as chaves do Supabase nas variáveis de ambiente!');
+  console.warn('AVISO: Faltam as chaves do Supabase nas variÃ¡veis de ambiente!');
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Configuração Mercado Pago
+// ConfiguraÃ§Ã£o Mercado Pago
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 const MP_ACCESS_TOKEN = (process.env.MP_ACCESS_TOKEN || '').trim();
 const client = new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
@@ -32,7 +32,7 @@ const logWebhook = (data) => {
     fs.appendFileSync(logPath, msg);
 };
 
-// Criar Pedido (Original mantido por compatibilidade se necessário, mas usaremos a nova /api/criar-pix)
+// Criar Pedido (Original mantido por compatibilidade se necessÃ¡rio, mas usaremos a nova /api/criar-pix)
 app.post('/api/pedidos', async (req, res) => {
   const { error, data } = await supabase.from('pedidos').insert([req.body]);
   if (error) return res.status(500).json({ error: error.message });
@@ -95,11 +95,11 @@ app.get('/api/checar-pagamento/:id', async (req, res) => {
     const mpResponse = await payment.get({ id: mpId });
     res.json({ status: mpResponse.status });
   } catch (err) {
-    res.status(404).json({ error: 'Pagamento não encontrado' });
+    res.status(404).json({ error: 'Pagamento nÃ£o encontrado' });
   }
 });
 
-// Webhook Mercado Pago (Notificações Automáticas)
+// Webhook Mercado Pago (NotificaÃ§Ãµes AutomÃ¡ticas)
 app.post('/webhook/mercadopago', async (req, res) => {
   res.sendStatus(200); // Responder OK imediatamente
 
@@ -155,17 +155,14 @@ app.delete('/api/pedidos', async (req, res) => {
   res.json({ success: true });
 });
 
-// Rotas para servir o Frontend (Inlined)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
-});
 
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'admin.html'));
-});
+
+
 
 // Iniciar o servidor (Local/Vercel)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`API e Site rodando na porta ${PORT}`);
 });
+
+module.exports = app;
