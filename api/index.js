@@ -155,20 +155,8 @@ app.delete('/api/pedidos', async (req, res) => {
   res.json({ success: true });
 });
 
-// IMPORTANTE: Servir arquivos estáticos do frontend (CSS, JS, Imagens) na raiz
-app.use(express.static(path.join(__dirname, '')));
-
-// Rota para o index.html na raiz
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Rota para o admin.html na raiz
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
-});
-// Iniciar o servidor
+// Iniciar o servidor (Local/Vercel)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`API rodando na porta ${PORT}`);
 });
