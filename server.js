@@ -13,8 +13,7 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABA
 const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
 
 if(!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('ERRO: Faltam as chaves do Supabase no arquivo .env.local!');
-  process.exit(1);
+  console.warn('AVISO: Faltam as chaves do Supabase nas variáveis de ambiente!');
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
