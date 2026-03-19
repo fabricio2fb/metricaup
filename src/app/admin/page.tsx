@@ -293,8 +293,6 @@ export default function AdminPage() {
   useEffect(() => {
     if (authed) {
       loadOrders();
-      const t = setInterval(loadOrders, 30000);
-      return () => clearInterval(t);
     }
   }, [authed, loadOrders]);
 
