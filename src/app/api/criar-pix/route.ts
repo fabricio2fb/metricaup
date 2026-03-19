@@ -29,6 +29,22 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase.from('pedidos').insert([{ id, email, whatsapp, link, service, qty, val, ...pixData }]);
     if (error) throw error;
 
+    // 🔔 Push — novo pedido pendente entrando
+    try {
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'https://metricaup.vercel.app';
+      await fetch(`${baseUrl}/api/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '⏳ Novo Pedido Aguardando Pagamento',
+          body: `${service} — R$ ${Number(val).toFixed(2).replace('.', ',')} · ${email}`,
+          url: '/admin',
+        }),
+      });
+    } catch { /* push é opcional, não quebra o fluxo */ }
+
     return NextResponse.json({
       payment_id: mpResponse.id,
       qr_code_base64: pixData.pix_qr_base64,

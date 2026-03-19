@@ -475,7 +475,7 @@ export default function AdminPage() {
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-white/8">
-                          {['ID', 'Plat.', 'Serviço', 'Qtd', 'Valor', 'Cliente', 'Status', ''].map(h => (
+                          {['ID', 'Plat.', 'Serviço / Link', 'Qtd', 'Valor', 'Cliente', 'Status', ''].map(h => (
                             <th key={h} className="px-4 py-3 text-left font-semibold text-white/25 uppercase tracking-wider">{h}</th>
                           ))}
                         </tr>
@@ -485,14 +485,30 @@ export default function AdminPage() {
                           const plat = PLATFORMS.find(p => p.key === getOrderPlatform(o));
                           return (
                             <tr key={o.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
-                              <td className="px-4 py-3 font-mono text-white/30">{o.id}</td>
+                              <td className="px-4 py-3 font-mono text-white/30 text-[10px]">{o.id}</td>
                               <td className="px-4 py-3 text-base">{plat?.emoji}</td>
-                              <td className="px-4 py-3 text-white/70 max-w-[160px]"><div className="truncate">{o.service}</div></td>
+                              <td className="px-4 py-3 max-w-[180px]">
+                                <div className="text-white/70 truncate font-medium">{o.service}</div>
+                                {o.link && (
+                                  <a href={o.link} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-[10px] truncate block transition" title={o.link}>
+                                    🔗 {o.link.replace(/^https?:\/\//,'').slice(0, 36)}{o.link.length > 42 ? '…' : ''}
+                                  </a>
+                                )}
+                              </td>
                               <td className="px-4 py-3 text-white/50">{o.qty >= 1000 ? (o.qty / 1000) + 'k' : o.qty}</td>
                               <td className="px-4 py-3 font-semibold text-emerald-400">R${Number(o.val).toFixed(2).replace('.', ',')}</td>
                               <td className="px-4 py-3">
-                                <div className="text-white/70">{o.email}</div>
-                                {o.whatsapp && <div className="text-white/25">{o.whatsapp}</div>}
+                                <div className="text-white/70 text-xs">{o.email}</div>
+                                {o.whatsapp && (
+                                  <a
+                                    href={`https://wa.me/55${o.whatsapp.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-[10px] text-green-400 hover:text-green-300 transition mt-0.5"
+                                  >
+                                    <span>💬</span> {o.whatsapp}
+                                  </a>
+                                )}
                               </td>
                               <td className="px-4 py-3">
                                 <select value={o.status} onChange={e => setStatus(o.id, e.target.value)} className="bg-transparent border-0 outline-none text-xs cursor-pointer text-white/50 mb-1 w-full" style={{ backgroundColor: 'transparent' }}>
@@ -535,11 +551,30 @@ export default function AdminPage() {
                         </div>
                         <div className="text-emerald-400 font-bold text-sm flex-shrink-0">R${Number(o.val).toFixed(2).replace('.', ',')}</div>
                       </div>
+                      {/* Link do perfil */}
+                      {o.link && (
+                        <a href={o.link} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-blue-400 text-xs truncate hover:text-blue-300 transition">
+                          <span>🔗</span>
+                          <span className="truncate">{o.link.replace(/^https?:\/\//, '')}</span>
+                        </a>
+                      )}
                       <div className="flex items-center justify-between">
                         <StatusBadge status={o.status} />
                         <div className="text-white/40 text-xs">{o.qty >= 1000 ? (o.qty/1000)+'k' : o.qty} unid.</div>
                       </div>
-                      <div className="text-white/40 text-xs truncate">{o.email}</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-white/40 text-xs truncate flex-1">{o.email}</div>
+                        {o.whatsapp && (
+                          <a
+                            href={`https://wa.me/55${o.whatsapp.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 text-[11px] text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full hover:bg-green-500/20 transition flex-shrink-0"
+                          >
+                            💬 WhatsApp
+                          </a>
+                        )}
+                      </div>
                       <div className="flex gap-2">
                         <select value={o.status} onChange={e => setStatus(o.id, e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/50 outline-none" style={{ backgroundColor: '#1a1a1a' }}>
                           {STATUSES.map(s => <option key={s} value={s} style={{ backgroundColor: '#111' }}>{s}</option>)}
