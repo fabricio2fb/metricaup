@@ -155,20 +155,10 @@ app.delete('/api/pedidos', async (req, res) => {
   res.json({ success: true });
 });
 
-// Servir arquivos estáticos do frontend (CSS, JS, Imagens) na raiz
-app.use(express.static(path.join(__dirname, '')));
-
-// Rotas principais para Vercel encontrar o HTML
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Rota do painel de administração
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
-});
+// Na Vercel, o roteamento do site (HTML/CSS) é feito pelo vercel.json.
+// Este arquivo api/index.js agora serve apenas as requisições de dados (/api).
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`API Serverless rodando na porta ${PORT}`);
 });
