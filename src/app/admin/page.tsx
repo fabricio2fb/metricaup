@@ -338,6 +338,18 @@ export default function AdminPage() {
     setOrders([]);
   }
 
+  async function testPush() {
+    await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: '🔔 Teste de Notificação',
+        body: 'Se você está vendo isso, as notificações estão funcionando!',
+      }),
+    });
+    alert('Teste enviado! Verifique seu dispositivo.');
+  }
+
   function logout() {
     sessionStorage.removeItem('admin_auth');
     localStorage.removeItem('admin_auth_token');
@@ -489,9 +501,11 @@ export default function AdminPage() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Push notification bell */}
             <PushBell />
-            <button onClick={loadOrders} className="flex items-center gap-1.5 px-3 py-2 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-xs font-medium transition-all">
+            <button onClick={loadOrders} title="Atualizar pedidos" className="flex items-center gap-1.5 px-3 py-2 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-xs font-medium transition-all">
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-              <span className="hidden sm:inline">Atualizar</span>
+            </button>
+            <button onClick={testPush} title="Testar Notificações Push" className="flex items-center gap-1.5 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-xl text-xs font-medium transition-all">
+              <span>🚀</span>
             </button>
             <button onClick={clearOrders} className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl text-xs font-medium transition-all">
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>

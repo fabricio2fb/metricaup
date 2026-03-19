@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { supabase } from '@/lib/supabase';
+import { sendAdminNotification } from '@/lib/push';
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
 const payment = new Payment(client);
@@ -30,20 +31,10 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
 
     // 🔔 Push — novo pedido pendente entrando
-    try {
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'https://metricaup.vercel.app';
-      await fetch(`${baseUrl}/api/notify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: '⏳ Novo Pedido Aguardando Pagamento',
-          body: `${service} — R$ ${Number(val).toFixed(2).replace('.', ',')} · ${email}`,
-          url: '/admin',
-        }),
-      });
-    } catch { /* push é opcional, não quebra o fluxo */ }
+    await sendAdminNotification(
+      '⏳ Novo Pedido Aguardando Pagamento',
+      `${service} — R$ ${Number(val).toFixed(2).replace('.', ',')} · ${email}`
+    );
 
     return NextResponse.json({
       payment_id: mpResponse.id,
