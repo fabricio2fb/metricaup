@@ -267,9 +267,24 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'analytics'>('orders');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
 
   // Auth check
   useEffect(() => {
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
     const sessionAuth = sessionStorage.getItem('admin_auth') === '1';
     const persistentAuth = localStorage.getItem('admin_auth_token') === H_TOKEN;
     
@@ -277,7 +292,17 @@ export default function AdminPage() {
       setAuthed(true);
     }
     setCheckingAuth(false);
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    setShowInstallBtn(false);
+  };
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -416,6 +441,15 @@ export default function AdminPage() {
 
         {/* Footer */}
         <div className="p-3 border-t border-white/8 space-y-0.5">
+          {showInstallBtn && (
+            <button
+              onClick={handleInstall}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#f9317a]/10 text-[#f9317a] hover:bg-[#f9317a]/20 transition-all font-bold mb-1"
+            >
+              <span>📲</span>
+              <span className="text-[11px] uppercase tracking-wider">Instalar Painel</span>
+            </button>
+          )}
           <a href="/" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition-all">
             <span>🌐</span> <span className="font-medium">Ver Site</span>
           </a>
