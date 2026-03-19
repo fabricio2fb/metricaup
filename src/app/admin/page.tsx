@@ -157,6 +157,26 @@ function StatCard({ icon, label, value, sub }: { icon: string; label: string; va
   );
 }
 
+// ─── COPY BUTTON ─────────────────────────────────────────────────────────────
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy(e: React.MouseEvent) {
+    e.preventDefault();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <button
+      onClick={copy}
+      className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold transition border ${copied ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/8 border-white/10 text-white/30 hover:text-white/60 hover:bg-white/12'}`}
+      title="Copiar link"
+    >
+      {copied ? '✓' : '⎘'}
+    </button>
+  );
+}
+
 // ─── PUSH NOTIFICATION BELL ────────────────────────────────────────────────
 function PushBell() {
   const { supported, subscribed, loading, subscribe, unsubscribe } = usePushNotifications();
@@ -224,12 +244,12 @@ export default function AdminPage() {
 
   async function advanceStatus(id: string, current: string) {
     const next = STATUSES[(STATUSES.indexOf(current) + 1) % STATUSES.length];
-    await fetch(`/api/pedidos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: next }) });
+    await fetch(`/api/pedidos/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: next }) });
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: next } : o));
   }
 
   async function setStatus(id: string, status: string) {
-    await fetch(`/api/pedidos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    await fetch(`/api/pedidos/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
   }
 
@@ -487,12 +507,15 @@ export default function AdminPage() {
                             <tr key={o.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
                               <td className="px-4 py-3 font-mono text-white/30 text-[10px]">{o.id}</td>
                               <td className="px-4 py-3 text-base">{plat?.emoji}</td>
-                              <td className="px-4 py-3 max-w-[180px]">
-                                <div className="text-white/70 truncate font-medium">{o.service}</div>
+                              <td className="px-4 py-3 max-w-[200px]">
+                                <div className="text-white/70 truncate font-medium text-xs">{o.service}</div>
                                 {o.link && (
-                                  <a href={o.link} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-[10px] truncate block transition" title={o.link}>
-                                    🔗 {o.link.replace(/^https?:\/\//,'').slice(0, 36)}{o.link.length > 42 ? '…' : ''}
-                                  </a>
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <a href={o.link} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-[10px] truncate transition flex-1 min-w-0" title={o.link}>
+                                      🔗 {o.link.replace(/^https?:\/\//, '').slice(0, 28)}{o.link.length > 34 ? '…' : ''}
+                                    </a>
+                                    <CopyBtn text={o.link} />
+                                  </div>
                                 )}
                               </td>
                               <td className="px-4 py-3 text-white/50">{o.qty >= 1000 ? (o.qty / 1000) + 'k' : o.qty}</td>

@@ -50,7 +50,89 @@ function SalesToast() {
   );
 }
 
-// ===== BADGE =====
+// ===== WHATSAPP SUPPORT BUTTON =====
+const WA_NUMBER = '5521980258450';
+const WA_OPTIONS = [
+  { emoji: '🔗', label: 'Errei o link do perfil', msg: 'Olá! Errei o link do perfil no meu pedido e preciso corrigir. Pode me ajudar?' },
+  { emoji: '💰', label: 'Paguei e não recebi', msg: 'Olá! Realizei o pagamento via PIX mas ainda não recebi meu pedido. Pode verificar?' },
+  { emoji: '⏳', label: 'Demora na entrega', msg: 'Olá! Meu pedido está demorando mais do que o previsto. Pode checar o status?' },
+  { emoji: '↩️', label: 'Quero reembolso', msg: 'Olá! Gostaria de solicitar o reembolso do meu pedido. Como procedo?' },
+  { emoji: '❓', label: 'Tenho uma dúvida', msg: 'Olá! Tenho uma dúvida sobre os serviços da MetricaUp.' },
+];
+
+function WhatsAppSupport() {
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState('');
+
+  function openWA(msg: string) {
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    setOpen(false);
+    setCustom('');
+  }
+
+  function sendCustom() {
+    if (!custom.trim()) return;
+    openWA(custom.trim());
+  }
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      {/* Popover */}
+      {open && (
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-2xl shadow-black/10 w-80 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50">
+            <div className="font-bold text-sm text-gray-900">Como podemos ajudar?</div>
+            <div className="text-xs text-gray-400 mt-0.5">Selecione ou escreva sua mensagem</div>
+          </div>
+          <div className="p-3 space-y-1">
+            {WA_OPTIONS.map(opt => (
+              <button
+                key={opt.label}
+                onClick={() => openWA(opt.msg)}
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors group"
+              >
+                <span className="text-lg flex-shrink-0">{opt.emoji}</span>
+                <span className="text-sm text-gray-700 group-hover:text-gray-900 font-medium">{opt.label}</span>
+                <span className="ml-auto text-gray-300 group-hover:text-gray-500 text-xs">→</span>
+              </button>
+            ))}
+          </div>
+          <div className="px-3 pb-3">
+            <div className="flex gap-2">
+              <input
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 transition placeholder:text-gray-300"
+                placeholder="Ou escreva sua mensagem..."
+                value={custom}
+                onChange={e => setCustom(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendCustom()}
+              />
+              <button
+                onClick={sendCustom}
+                disabled={!custom.trim()}
+                className="bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-40"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FAB Button */}
+      <button
+        onClick={() => setOpen(!open)}
+        className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 ${open ? 'bg-gray-800 rotate-45 scale-95' : 'bg-[#25D366] hover:bg-[#128C7E] hover:scale-105'}`}
+      >
+        {open ? (
+          <svg viewBox="0 0 24 24" fill="white" className="w-6 h-6"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.993 0C5.384 0 0 5.373 0 11.97c0 2.096.549 4.062 1.508 5.775L.057 24l6.438-1.685A11.95 11.95 0 0011.993 24c6.61 0 11.994-5.373 11.994-11.97S18.603 0 11.993 0z"/></svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 function Badge({ type }: { type: string }) {
   const map: Record<string, string> = {
     br: 'bg-green-50 text-green-700',
@@ -491,6 +573,7 @@ export default function Home() {
 
       {tracking && <TrackingModal onClose={() => setTracking(false)} />}
       <SalesToast />
+      <WhatsAppSupport />
 
       {/* VIEWS */}
       {view === 'home' && (
