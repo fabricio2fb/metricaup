@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import InstallPWA from "./components/InstallPWA";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -19,6 +20,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#f9317a" />
         <link
           href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&display=swap"
           rel="stylesheet"
@@ -26,6 +31,7 @@ export default function RootLayout({
       </head>
       <body className={`${jakarta.variable} font-jakarta antialiased`}>
         {children}
+        <InstallPWA />
       </body>
     </html>
   );
