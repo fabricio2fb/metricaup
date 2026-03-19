@@ -244,11 +244,11 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
   const qty: QtyOption = mode === 'grid'
     ? service.qtys[qtyIdx]
     : (() => {
-        const v = parseInt(customVal);
-        if (isNaN(v) || v < 100) return { q: 0, p: 0 };
-        const b = service.qtys[0];
-        return { q: v, p: (b.p / b.q) * v };
-      })();
+      const v = parseInt(customVal);
+      if (isNaN(v) || v < 100) return { q: 0, p: 0 };
+      const b = service.qtys[0];
+      return { q: v, p: (b.p / b.q) * v };
+    })();
 
   async function pay() {
     if (!link.trim()) { alert('Cole o link do perfil'); return; }
@@ -373,7 +373,7 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
               )}
             </button>
             <div className="flex items-center justify-center gap-3 mt-4">
-              <svg className="w-4 h-4 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg className="w-4 h-4 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
               <span className="text-xs text-gray-400">Pagamento 100% seguro via PIX</span>
             </div>
           </div>
@@ -551,14 +551,14 @@ export default function Home() {
             <div className="bg-white border border-gray-100 rounded-2xl md:rounded-3xl p-6 md:p-9 flex flex-wrap items-center justify-between gap-5 shadow-sm">
               <div className="flex items-center gap-4 md:gap-5">
                 <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" fill="#16a34a" className="w-8 h-8"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.993 0C5.384 0 0 5.373 0 11.97c0 2.096.549 4.062 1.508 5.775L.057 24l6.438-1.685A11.95 11.95 0 0011.993 24c6.61 0 11.994-5.373 11.994-11.97S18.603 0 11.993 0z"/></svg>
+                  <svg viewBox="0 0 24 24" fill="#16a34a" className="w-8 h-8"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" /><path d="M11.993 0C5.384 0 0 5.373 0 11.97c0 2.096.549 4.062 1.508 5.775L.057 24l6.438-1.685A11.95 11.95 0 0011.993 24c6.61 0 11.994-5.373 11.994-11.97S18.603 0 11.993 0z" /></svg>
                 </div>
                 <div className="min-w-0">
                   <div className="font-bold text-base md:text-xl mb-1 font-clash">Precisa de ajuda?</div>
                   <div className="text-gray-500 text-xs md:text-sm">Respondemos em minutos no WhatsApp.</div>
                 </div>
               </div>
-              <a href="https://wa.me/5511999999999" target="_blank" rel="noreferrer" className="bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-4 rounded-full font-bold text-sm transition hover:-translate-y-0.5 shadow-md shadow-green-100 flex items-center gap-2 whitespace-nowrap">
+              <a href="https://wa.me/5521980258450" rel="noreferrer" className="bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-4 rounded-full font-bold text-sm transition hover:-translate-y-0.5 shadow-md shadow-green-100 flex items-center gap-2 whitespace-nowrap">
                 💬 Falar no WhatsApp
               </a>
             </div>
@@ -596,7 +596,7 @@ export default function Home() {
           <footer className="border-t border-gray-100 py-10 text-center bg-white">
             <div className="inline-flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
               </div>
               <span className="font-bold text-lg font-clash">Metrica<span className="text-[#f9317a]">Up</span></span>
             </div>

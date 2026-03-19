@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface Order {
   id: string;
@@ -153,6 +154,32 @@ function StatCard({ icon, label, value, sub }: { icon: string; label: string; va
       <div className="text-xs text-white/40 font-medium">{label}</div>
       {sub && <div className="text-[10px] text-white/25 mt-0.5">{sub}</div>}
     </div>
+  );
+}
+
+// ─── PUSH NOTIFICATION BELL ────────────────────────────────────────────────
+function PushBell() {
+  const { supported, subscribed, loading, subscribe, unsubscribe } = usePushNotifications();
+  if (!supported) return null;
+  return (
+    <button
+      onClick={subscribed ? unsubscribe : subscribe}
+      disabled={loading}
+      title={subscribed ? 'Desativar notificações push' : 'Ativar notificações push'}
+      className={`flex items-center gap-1.5 px-3 py-2 border rounded-xl text-xs font-medium transition-all disabled:opacity-50 ${
+        subscribed
+          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
+          : 'bg-white/8 border-white/10 text-white/60 hover:bg-white/12'
+      }`}
+    >
+      {loading ? (
+        <span className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+      ) : (
+        <span className="text-sm">{subscribed ? '🔔' : '🔕'}</span>
+      )}
+      <span className="hidden sm:inline">{subscribed ? 'Push Ativo' : 'Notif.'}</span>
+      {subscribed && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />}
+    </button>
   );
 }
 
@@ -343,6 +370,8 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Push notification bell */}
+            <PushBell />
             <button onClick={loadOrders} className="flex items-center gap-1.5 px-3 py-2 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-xs font-medium transition-all">
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
               <span className="hidden sm:inline">Atualizar</span>

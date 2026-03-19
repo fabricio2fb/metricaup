@@ -25,13 +25,12 @@ export const PLATFORMS: Record<string, Platform> = {
     desc: 'Seguidores, curtidas e views para crescer no Instagram.',
     gradient: 'linear-gradient(135deg,#833ab4 0%,#fd1d1d 50%,#fcb045 100%)',
     services: [
-      { id:'ig1', cat:'seguidores', name:'Seguidores Mundiais', desc:'Alta velocidade de entrega, perfis internacionais verificados.', icon:ICONS.world, iconBg:'#eff6ff', iconColor:'#3b82f6', badges:['fast'], qtys:[{q:100,p:2.99},{q:500,p:14.99},{q:1000,p:24.99},{q:5000,p:124.99},{q:10000,p:249.99}] },
-      { id:'ig2', cat:'seguidores', name:'Seguidores Brasileiros', desc:'Perfis reais do Brasil com fotos, bio e histórico de postagens.', icon:ICONS.br, iconBg:'#dcfce7', iconColor:'#16a34a', badges:['br','hot'], qtys:[{q:100,p:9.99},{q:500,p:49.99},{q:1000,p:69.99},{q:5000,p:299.99},{q:10000,p:499.99}] },
-      { id:'ig3', cat:'curtidas', name:'Curtidas Mundiais', desc:'Curtidas internacionais entregues imediatamente após pagamento.', icon:ICONS.heart, iconBg:'#f5f3ff', iconColor:'#8b5cf6', badges:['fast'], qtys:[{q:100,p:2.99},{q:500,p:7.99},{q:1000,p:12.99},{q:5000,p:29.99},{q:10000,p:49.99}] },
-      { id:'ig4', cat:'curtidas', name:'Curtidas Brasileiras', desc:'Curtidas de contas BR ativas com engajamento orgânico real.', icon:ICONS.heart, iconBg:'#fff1f2', iconColor:'#ef4444', badges:['br','hot'], qtys:[{q:100,p:4.99},{q:500,p:12.99},{q:1000,p:19.99},{q:5000,p:79.99},{q:10000,p:149.99}] },
-      { id:'ig5', cat:'views', name:'Visualizações em Reels', desc:'Visualizações de Reels com alta retenção e alcance orgânico.', icon:ICONS.play, iconBg:'#fff7ed', iconColor:'#f97316', badges:['hot'], qtys:[{q:1000,p:3.99},{q:5000,p:14.99},{q:10000,p:24.99},{q:50000,p:79.99},{q:100000,p:149.99}] },
-      { id:'ig6', cat:'views', name:'Visualizações em Stories', desc:'Visualizações de Stories com perfis ativos e variados.', icon:ICONS.eye, iconBg:'#f0fdf4', iconColor:'#059669', badges:['fast'], qtys:[{q:100,p:2.99},{q:500,p:6.99},{q:1000,p:17.99},{q:5000,p:49.99},{q:10000,p:89.99},{q:25000,p:179.99}] },
-      { id:'ig7', cat:'comentarios', name:'Comentários BR', desc:'Comentários de brasileiros. Você ganha engajamento premium.', icon:ICONS.chat, iconBg:'#fdf4ff', iconColor:'#d946ef', badges:[], qtys:[{q:10,p:4.99},{q:50,p:19.99},{q:100,p:34.99},{q:500,p:149.99}] },
+      { id: 'ig1', cat: 'seguidores', name: 'Seguidores Mundiais', desc: 'Alta velocidade de entrega, perfis internacionais verificados.', icon: ICONS.world, iconBg: '#eff6ff', iconColor: '#3b82f6', badges: ['fast'], qtys: [{ q: 100, p: 2.99 }, { q: 500, p: 14.99 }, { q: 1000, p: 24.99 }, { q: 5000, p: 124.99 }, { q: 10000, p: 249.99 }] },
+      { id: 'ig2', cat: 'seguidores', name: 'Seguidores Brasileiros', desc: 'Perfis reais do Brasil com fotos, bio e histórico de postagens.', icon: ICONS.br, iconBg: '#dcfce7', iconColor: '#16a34a', badges: ['br', 'hot'], qtys: [{ q: 100, p: 9.99 }, { q: 500, p: 49.99 }, { q: 1000, p: 69.99 }, { q: 5000, p: 299.99 }, { q: 10000, p: 499.99 }] },
+      { id: 'ig3', cat: 'curtidas', name: 'Curtidas Mundiais', desc: 'Curtidas internacionais entregues imediatamente após pagamento.', icon: ICONS.heart, iconBg: '#f5f3ff', iconColor: '#8b5cf6', badges: ['fast'], qtys: [{ q: 100, p: 2.99 }, { q: 500, p: 7.99 }, { q: 1000, p: 12.99 }, { q: 5000, p: 29.99 }, { q: 10000, p: 49.99 }] },
+      { id: 'ig4', cat: 'curtidas', name: 'Curtidas Brasileiras', desc: 'Curtidas de contas BR ativas com engajamento orgânico real.', icon: ICONS.heart, iconBg: '#fff1f2', iconColor: '#ef4444', badges: ['br', 'hot'], qtys: [{ q: 100, p: 4.99 }, { q: 500, p: 12.99 }, { q: 1000, p: 19.99 }, { q: 5000, p: 79.99 }, { q: 10000, p: 149.99 }] },
+      { id: 'ig5', cat: 'views', name: 'Visualizações em Reels', desc: 'Visualizações de Reels com alta retenção e alcance orgânico.', icon: ICONS.play, iconBg: '#fff7ed', iconColor: '#f97316', badges: ['hot'], qtys: [{ q: 1000, p: 3.99 }, { q: 5000, p: 14.99 }, { q: 10000, p: 24.99 }, { q: 50000, p: 79.99 }, { q: 100000, p: 149.99 }] },
+      { id: 'ig6', cat: 'views', name: 'Visualizações em Stories', desc: 'Visualizações de Stories com perfis ativos e variados.', icon: ICONS.eye, iconBg: '#f0fdf4', iconColor: '#059669', badges: ['fast'], qtys: [{ q: 100, p: 2.99 }, { q: 500, p: 6.99 }, { q: 1000, p: 17.99 }, { q: 5000, p: 49.99 }, { q: 10000, p: 89.99 }, { q: 25000, p: 179.99 }] },
     ]
   },
   tiktok: {
@@ -39,11 +38,10 @@ export const PLATFORMS: Record<string, Platform> = {
     desc: 'Seguidores, curtidas e views para viralizar no TikTok.',
     gradient: 'linear-gradient(135deg,#010101 0%,#161616 40%,#2a0010 100%)',
     services: [
-      { id:'tt1', cat:'views', name:'Visualizações Mundiais', desc:'Views internacionais de alto volume com entrega ultrarrápida.', icon:ICONS.eye, iconBg:'#f0fdf4', iconColor:'#059669', badges:['fast'], qtys:[{q:1000,p:2.99},{q:5000,p:10.99},{q:10000,p:19.99},{q:50000,p:43.99},{q:100000,p:69.99}] },
-      { id:'tt2', cat:'seguidores', name:'Seguidores Mundiais', desc:'Seguidores internacionais de alta qualidade, entrega gradual.', icon:ICONS.world, iconBg:'#eff6ff', iconColor:'#3b82f6', badges:['fast'], qtys:[{q:100,p:3.90},{q:500,p:16.90},{q:1000,p:27.90},{q:5000,p:119.90},{q:10000,p:219.90}] },
-      { id:'tt3', cat:'seguidores', name:'Seguidores Brasileiros', desc:'Seguidores brasileiros reais para crescer seu perfil.', icon:ICONS.br, iconBg:'#dcfce7', iconColor:'#16a34a', badges:['br','hot'], qtys:[{q:100,p:7.99},{q:500,p:28.99},{q:1000,p:59.99},{q:5000,p:249.99},{q:10000,p:499.99}] },
-      { id:'tt4', cat:'curtidas', name:'Curtidas', desc:'Curtidas de alto volume entregues rapidamente.', icon:ICONS.heart, iconBg:'#fff1f2', iconColor:'#ef4444', badges:['fast'], qtys:[{q:100,p:2.99},{q:500,p:7.99},{q:1000,p:11.99},{q:5000,p:29.99},{q:10000,p:49.99}] },
-      { id:'tt5', cat:'compartilhamentos', name:'Compartilhamentos', desc:'Aumente o fator viral do seu vídeo drasticamente.', icon:ICONS.share, iconBg:'#f5f3ff', iconColor:'#8b5cf6', badges:[], qtys:[{q:100,p:1.99},{q:500,p:4.99},{q:1000,p:8.99},{q:5000,p:24.99},{q:10000,p:39.99}] },
+      { id: 'tt1', cat: 'views', name: 'Visualizações Mundiais', desc: 'Views internacionais de alto volume com entrega ultrarrápida.', icon: ICONS.eye, iconBg: '#f0fdf4', iconColor: '#059669', badges: ['fast'], qtys: [{ q: 1000, p: 2.99 }, { q: 5000, p: 10.99 }, { q: 10000, p: 19.99 }, { q: 50000, p: 43.99 }, { q: 100000, p: 69.99 }] },
+      { id: 'tt2', cat: 'seguidores', name: 'Seguidores Mundiais', desc: 'Seguidores internacionais de alta qualidade, entrega gradual.', icon: ICONS.world, iconBg: '#eff6ff', iconColor: '#3b82f6', badges: ['fast'], qtys: [{ q: 100, p: 3.90 }, { q: 500, p: 16.90 }, { q: 1000, p: 27.90 }, { q: 5000, p: 119.90 }, { q: 10000, p: 219.90 }] },
+      { id: 'tt3', cat: 'seguidores', name: 'Seguidores Brasileiros', desc: 'Seguidores brasileiros reais para crescer seu perfil.', icon: ICONS.br, iconBg: '#dcfce7', iconColor: '#16a34a', badges: ['br', 'hot'], qtys: [{ q: 100, p: 7.99 }, { q: 500, p: 28.99 }, { q: 1000, p: 59.99 }, { q: 5000, p: 249.99 }, { q: 10000, p: 499.99 }] },
+      { id: 'tt4', cat: 'curtidas', name: 'Curtidas', desc: 'Curtidas de alto volume entregues rapidamente.', icon: ICONS.heart, iconBg: '#fff1f2', iconColor: '#ef4444', badges: ['fast'], qtys: [{ q: 100, p: 2.99 }, { q: 500, p: 7.99 }, { q: 1000, p: 11.99 }, { q: 5000, p: 29.99 }, { q: 10000, p: 49.99 }] },
     ]
   },
   facebook: {
@@ -51,9 +49,9 @@ export const PLATFORMS: Record<string, Platform> = {
     desc: 'Seguidores, curtidas e views para sua página no Facebook.',
     gradient: 'linear-gradient(135deg,#1877f2 0%,#0d47a1 100%)',
     services: [
-      { id:'fb1', cat:'seguidores', name:'Seguidores Mundiais', desc:'Seguidores internacionais entregues com velocidade.', icon:ICONS.world, iconBg:'#eff6ff', iconColor:'#3b82f6', badges:['fast'], qtys:[{q:100,p:4.90},{q:500,p:19.90},{q:1000,p:34.90},{q:5000,p:149.90},{q:10000,p:279.90}] },
-      { id:'fb2', cat:'curtidas', name:'Curtidas e Reações', desc:'Curtidas para publicações e página no Facebook.', icon:ICONS.heart, iconBg:'#fff1f2', iconColor:'#ef4444', badges:['hot'], qtys:[{q:100,p:9.90},{q:500,p:39.90},{q:1000,p:69.90},{q:5000,p:249.90}] },
-      { id:'fb3', cat:'views', name:'Visualizações de Vídeo', desc:'Visualizações de vídeos publicados no Facebook.', icon:ICONS.play, iconBg:'#f0fdf4', iconColor:'#059669', badges:[], qtys:[{q:1000,p:19.90},{q:5000,p:79.90},{q:10000,p:149.90},{q:50000,p:599.90},{q:100000,p:999.90}] },
+      { id: 'fb1', cat: 'seguidores', name: 'Seguidores Mundiais', desc: 'Seguidores internacionais entregues com velocidade.', icon: ICONS.world, iconBg: '#eff6ff', iconColor: '#3b82f6', badges: ['fast'], qtys: [{ q: 100, p: 4.90 }, { q: 500, p: 19.90 }, { q: 1000, p: 34.90 }, { q: 5000, p: 149.90 }, { q: 10000, p: 279.90 }] },
+      { id: 'fb2', cat: 'curtidas', name: 'Curtidas e Reações', desc: 'Curtidas para publicações e página no Facebook.', icon: ICONS.heart, iconBg: '#fff1f2', iconColor: '#ef4444', badges: ['hot'], qtys: [{ q: 100, p: 9.90 }, { q: 500, p: 39.90 }, { q: 1000, p: 69.90 }, { q: 5000, p: 249.90 }] },
+      { id: 'fb3', cat: 'views', name: 'Visualizações de Vídeo', desc: 'Visualizações de vídeos publicados no Facebook.', icon: ICONS.play, iconBg: '#f0fdf4', iconColor: '#059669', badges: [], qtys: [{ q: 1000, p: 19.90 }, { q: 5000, p: 79.90 }, { q: 10000, p: 149.90 }, { q: 50000, p: 599.90 }, { q: 100000, p: 999.90 }] },
     ]
   },
   kwai: {
@@ -61,9 +59,9 @@ export const PLATFORMS: Record<string, Platform> = {
     desc: 'Seguidores, curtidas e visualizações para crescer no Kwai.',
     gradient: 'linear-gradient(135deg,#ff6b00 0%,#ff8c00 50%,#ffa500 100%)',
     services: [
-      { id:'kw1', cat:'seguidores', name:'Seguidores Brasileiros', desc:'Seguidores brasileiros reais para crescer no Kwai.', icon:ICONS.br, iconBg:'#dcfce7', iconColor:'#16a34a', badges:['br','hot'], qtys:[{q:100,p:4.99},{q:500,p:19.99},{q:1000,p:29.99},{q:5000,p:119.99},{q:10000,p:219.99}] },
-      { id:'kw2', cat:'curtidas', name:'Curtidas Brasileiras', desc:'Curtidas de contas brasileiras ativas no Kwai.', icon:ICONS.heart, iconBg:'#fff1f2', iconColor:'#ef4444', badges:['br'], qtys:[{q:100,p:3.99},{q:500,p:9.99},{q:1000,p:14.99},{q:5000,p:59.99}] },
-      { id:'kw3', cat:'views', name:'Visualizações', desc:'Visualizações para seus vídeos no Kwai.', icon:ICONS.eye, iconBg:'#fff7ed', iconColor:'#f97316', badges:['fast'], qtys:[{q:1000,p:4.90},{q:5000,p:19.90},{q:10000,p:34.90},{q:50000,p:149.90},{q:100000,p:279.90}] },
+      { id: 'kw1', cat: 'seguidores', name: 'Seguidores Brasileiros', desc: 'Seguidores brasileiros reais para crescer no Kwai.', icon: ICONS.br, iconBg: '#dcfce7', iconColor: '#16a34a', badges: ['br', 'hot'], qtys: [{ q: 100, p: 4.99 }, { q: 500, p: 19.99 }, { q: 1000, p: 29.99 }, { q: 5000, p: 119.99 }, { q: 10000, p: 219.99 }] },
+      { id: 'kw2', cat: 'curtidas', name: 'Curtidas Brasileiras', desc: 'Curtidas de contas brasileiras ativas no Kwai.', icon: ICONS.heart, iconBg: '#fff1f2', iconColor: '#ef4444', badges: ['br'], qtys: [{ q: 100, p: 3.99 }, { q: 500, p: 9.99 }, { q: 1000, p: 14.99 }, { q: 5000, p: 59.99 }] },
+      { id: 'kw3', cat: 'views', name: 'Visualizações', desc: 'Visualizações para seus vídeos no Kwai.', icon: ICONS.eye, iconBg: '#fff7ed', iconColor: '#f97316', badges: ['fast'], qtys: [{ q: 1000, p: 4.90 }, { q: 5000, p: 19.90 }, { q: 10000, p: 34.90 }, { q: 50000, p: 149.90 }, { q: 100000, p: 279.90 }] },
     ]
   }
 };
