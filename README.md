@@ -1,59 +1,36 @@
-# MetricaUp - Sistema de Vendas com Mercado Pago Pix
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Este projeto é uma landing page de venda de serviços digitais com checkout transparente via Pix (Mercado Pago) e backend seguro em Node.js.
+## Getting Started
 
-## Como configurar o Mercado Pago
-
-1. Vá ao [Painel de Desenvolvedores do Mercado Pago](https://www.mercadopago.com.br/developers/panel).
-2. Crie uma aplicação ou selecione uma existente.
-3. Em **Credenciais de Produção**, copie o seu **Access Token**.
-4. Cole o token no arquivo `.env.local` na variável `MP_ACCESS_TOKEN`.
-
-## Como configurar o Supabase (Banco de Dados)
-
-Execute o seguinte script no seu **SQL Editor** do Supabase para preparar a tabela de pedidos:
-
-```sql
--- Adicionar campos necessários para o Mercado Pago e Pix
-ALTER TABLE public.pedidos 
-ADD COLUMN IF NOT EXISTS mp_id TEXT,
-ADD COLUMN IF NOT EXISTS pix_qr_text TEXT,
-ADD COLUMN IF NOT EXISTS pix_qr_base64 TEXT,
-ADD COLUMN IF NOT EXISTS expiracao TIMESTAMP WITH TIME ZONE,
-ADD COLUMN IF NOT EXISTS whatsapp TEXT;
-```
-
-## Instruções de Deploy na Render.com
-
-Para colocar o site no ar (online):
-
-1. Crie uma conta no [Render.com](https://render.com).
-2. Clique em **New** > **Web Service**.
-3. Conecte seu repositório do GitHub com este código.
-4. Em **Build Command**, use: `npm install`
-5. Em **Start Command**, use: `node server.js`
-6. Vá na aba **Environment** e adicione todas as variáveis do seu `.env.local`:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `MP_ACCESS_TOKEN`
-7. Após o deploy, copie a URL do seu site (ex: `https://meusite.onrender.com`).
-
-### Configurando o Webhook (Opcional, para aprovação automática)
-
-1. No painel do Mercado Pago, vá em **Webhooks**.
-2. Cole a URL: `https://seu-site.onrender.com/webhook/mercadopago`
-3. Marque os eventos de **Pagamentos (payments)** e salve.
-
-## Comandos Locais
+First, run the development server:
 
 ```bash
-# Instalar dependências
-npm install
-
-# Rodar em localhost:3000
-node server.js
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
----
-*Desenvolvido por Antigravity AI*
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
