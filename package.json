@@ -2,9 +2,9 @@
   "name": "metricaup",
   "version": "1.0.0",
   "description": "MetricaUp API e Frontend",
-  "main": "api/index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node api/index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

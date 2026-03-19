@@ -155,10 +155,20 @@ app.delete('/api/pedidos', async (req, res) => {
   res.json({ success: true });
 });
 
-// O Express em modo "Serverless" na Vercel não precisa servir estáticos (a Vercel faz isso)
-// Basta manter as rotas de API para suprir os dados do banco e Mercado Pago.
+// Servir arquivos estáticos do frontend (CSS, JS, Imagens) na raiz
+app.use(express.static(path.join(__dirname, '')));
+
+// Rotas principais para Vercel encontrar o HTML
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Rota do painel de administração
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor de API rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
