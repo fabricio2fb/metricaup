@@ -480,12 +480,12 @@ export default function Home() {
   return (
     <>
       {/* NAV */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-10 py-4 flex items-center justify-between">
-        <button onClick={goHome} className="font-bold text-[22px] tracking-tight font-clash">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-5 md:px-10 py-3.5 flex items-center justify-between">
+        <button onClick={goHome} className="font-bold text-xl md:text-[22px] tracking-tight font-clash">
           Metrica<em className="text-[#f9317a] not-italic">Up</em>
         </button>
-        <button onClick={() => setTracking(true)} className="flex items-center gap-2 text-sm font-semibold text-gray-500 px-4 py-2 rounded-full hover:bg-gray-100 transition">
-          <span>📦</span> Rastrear Pedido
+        <button onClick={() => setTracking(true)} className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-gray-500 px-3 md:px-4 py-2 rounded-full hover:bg-gray-100 transition">
+          <span>📦</span> <span className="hidden sm:inline">Rastrear Pedido</span><span className="sm:hidden">Pedido</span>
         </button>
       </nav>
 
@@ -496,66 +496,66 @@ export default function Home() {
       {view === 'home' && (
         <main className="bg-[#FAFAFA]">
           {/* Hero */}
-          <section className="max-w-6xl mx-auto px-10 pt-36 pb-16">
-            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-10">
+          <section className="max-w-6xl mx-auto px-5 md:px-10 pt-28 md:pt-36 pb-10 md:pb-16">
+            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-full px-4 py-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-6 md:mb-10">
               ✨ Crescimento Real nas Redes Sociais
             </div>
-            <h1 className="font-bold text-[clamp(44px,6.5vw,86px)] leading-[0.95] tracking-[-3px] mb-8 max-w-4xl font-clash">
+            <h1 className="font-bold text-[clamp(36px,8vw,86px)] leading-[0.95] tracking-[-2px] md:tracking-[-3px] mb-5 md:mb-8 max-w-4xl font-clash">
               Mais{' '}
               <span className="relative">
                 Seguidores
-                <span className="absolute -bottom-1 left-0 right-0 h-2.5 bg-gradient-to-r from-[#f9317a] to-[#f5a623] opacity-30 rounded-sm -z-10" />
+                <span className="absolute -bottom-1 left-0 right-0 h-2 md:h-2.5 bg-gradient-to-r from-[#f9317a] to-[#f5a623] opacity-30 rounded-sm -z-10" />
               </span>
               {', '}Curtidas & Views
             </h1>
-            <div className="flex flex-wrap items-end justify-between gap-8 mb-16">
-              <p className="text-lg text-gray-500 max-w-md leading-relaxed">Pacotes de engajamento para Instagram, TikTok, Facebook e Kwai. Entrega rápida, resultados reais.</p>
-              <div className="flex gap-10 flex-shrink-0">
+            <div className="flex flex-wrap items-end justify-between gap-5 mb-10 md:mb-16">
+              <p className="text-sm md:text-lg text-gray-500 max-w-md leading-relaxed">Pacotes para Instagram, TikTok, Facebook e Kwai. Entrega rápida, resultados reais.</p>
+              <div className="flex gap-6 md:gap-10">
                 {[['50k+', 'Clientes'], ['99%', 'Satisfação'], ['24h', 'Suporte']].map(([n, l]) => (
                   <div key={l} className="text-right">
-                    <div className="font-bold text-4xl tracking-tight font-clash">{n}</div>
-                    <div className="text-sm text-gray-400 font-medium mt-1">{l}</div>
+                    <div className="font-bold text-2xl md:text-4xl tracking-tight font-clash">{n}</div>
+                    <div className="text-xs md:text-sm text-gray-400 font-medium mt-0.5">{l}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Platform cards */}
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Object.entries(PLATFORMS).map(([key, p]) => (
                 <button
                   key={key}
                   onClick={() => { setPlatKey(key); setView('services'); window.scrollTo({ top: 0 }); }}
-                  className={`bg-gradient-to-br ${PLAT_CLASSES[key]} rounded-3xl p-10 text-left relative overflow-hidden min-h-64 flex flex-col justify-between group hover:-translate-y-1.5 hover:scale-[1.015] hover:shadow-2xl transition-all duration-300`}
+                  className={`bg-gradient-to-br ${PLAT_CLASSES[key]} rounded-2xl md:rounded-3xl p-7 md:p-10 text-left relative overflow-hidden min-h-52 md:min-h-64 flex flex-col justify-between group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="w-[68px] h-[68px] rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center text-3xl">{p.emoji}</div>
-                    <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center text-white text-sm border border-white/20 group-hover:bg-white/30 transition">↗</div>
+                    <div className="w-14 h-14 md:w-[68px] md:h-[68px] rounded-xl md:rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center text-2xl md:text-3xl">{p.emoji}</div>
+                    <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white text-sm border border-white/20 group-hover:bg-white/30 transition">↗</div>
                   </div>
                   <div>
-                    <div className="text-4xl font-bold text-white mb-3 tracking-tight font-clash">{p.name}</div>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="text-3xl md:text-4xl font-bold text-white mb-2 md:mb-3 tracking-tight font-clash">{p.name}</div>
+                    <div className="flex gap-1.5 flex-wrap">
                       {[...new Set(p.services.map(s => s.cat))].slice(0, 3).map(c => (
-                        <span key={c} className="text-xs font-semibold bg-white/15 text-white px-3 py-1 rounded-full border border-white/15 capitalize">{c}</span>
+                        <span key={c} className="text-[10px] md:text-xs font-semibold bg-white/15 text-white px-2.5 py-1 rounded-full border border-white/15 capitalize">{c}</span>
                       ))}
                     </div>
                   </div>
-                  <div className="absolute right-[-15px] bottom-[-25px] text-[140px] opacity-[0.07] leading-none pointer-events-none select-none">{p.emoji}</div>
+                  <div className="absolute right-[-10px] bottom-[-20px] text-[100px] md:text-[140px] opacity-[0.07] leading-none pointer-events-none select-none">{p.emoji}</div>
                 </button>
               ))}
             </div>
           </section>
 
           {/* WhatsApp CTA */}
-          <section className="max-w-6xl mx-auto px-10 pb-20">
-            <div className="bg-white border border-gray-100 rounded-3xl p-9 flex flex-wrap items-center justify-between gap-6 shadow-sm">
-              <div className="flex items-center gap-5">
-                <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+          <section className="max-w-6xl mx-auto px-5 md:px-10 pb-12 md:pb-20">
+            <div className="bg-white border border-gray-100 rounded-2xl md:rounded-3xl p-6 md:p-9 flex flex-wrap items-center justify-between gap-5 shadow-sm">
+              <div className="flex items-center gap-4 md:gap-5">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
                   <svg viewBox="0 0 24 24" fill="#16a34a" className="w-8 h-8"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.993 0C5.384 0 0 5.373 0 11.97c0 2.096.549 4.062 1.508 5.775L.057 24l6.438-1.685A11.95 11.95 0 0011.993 24c6.61 0 11.994-5.373 11.994-11.97S18.603 0 11.993 0z"/></svg>
                 </div>
-                <div>
-                  <div className="font-bold text-xl mb-1 font-clash">Precisa de ajuda personalizada?</div>
-                  <div className="text-gray-500 text-sm">Nossa equipe responde em minutos no WhatsApp.</div>
+                <div className="min-w-0">
+                  <div className="font-bold text-base md:text-xl mb-1 font-clash">Precisa de ajuda?</div>
+                  <div className="text-gray-500 text-xs md:text-sm">Respondemos em minutos no WhatsApp.</div>
                 </div>
               </div>
               <a href="https://wa.me/5511999999999" target="_blank" rel="noreferrer" className="bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-4 rounded-full font-bold text-sm transition hover:-translate-y-0.5 shadow-md shadow-green-100 flex items-center gap-2 whitespace-nowrap">
@@ -565,8 +565,8 @@ export default function Home() {
           </section>
 
           {/* Social proof */}
-          <section className="overflow-hidden py-8 mb-4">
-            <div className="flex gap-4 whitespace-nowrap" style={{ animation: 'scroll-left 30s linear infinite' }}>
+          <section className="overflow-hidden py-6 mb-4">
+            <div className="flex gap-3 whitespace-nowrap" style={{ animation: 'scroll-left 30s linear infinite' }}>
               {[...Array(2)].flatMap(() => [
                 '⚡ Entrega em 30 min', '🇧🇷 Seguidores Reais BR', '✅ 50.000+ Clientes', '🔒 Pagamento Seguro', '💰 Menor Preço Garantido', '🏆 Avaliação 5 Estrelas', '♻️ Garantia de Reposição', '📊 Resultados Comprovados'
               ]).map((t, i) => (
@@ -576,10 +576,10 @@ export default function Home() {
           </section>
 
           {/* FAQ */}
-          <section className="max-w-6xl mx-auto px-10 pb-24">
-            <div className="text-center mb-12">
-              <div className="font-bold text-4xl tracking-tight mb-2 font-clash">Perguntas Frequentes</div>
-              <div className="text-gray-400">Tire suas dúvidas antes de comprar</div>
+          <section className="max-w-6xl mx-auto px-5 md:px-10 pb-16 md:pb-24">
+            <div className="text-center mb-8 md:mb-12">
+              <div className="font-bold text-2xl md:text-4xl tracking-tight mb-2 font-clash">Perguntas Frequentes</div>
+              <div className="text-gray-400 text-sm">Tire suas dúvidas antes de comprar</div>
             </div>
             <div className="max-w-2xl mx-auto space-y-3">
               {[
@@ -593,7 +593,7 @@ export default function Home() {
           </section>
 
           {/* Footer */}
-          <footer className="border-t border-gray-100 py-12 text-center bg-white">
+          <footer className="border-t border-gray-100 py-10 text-center bg-white">
             <div className="inline-flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
