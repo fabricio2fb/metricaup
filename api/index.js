@@ -155,8 +155,17 @@ app.delete('/api/pedidos', async (req, res) => {
   res.json({ success: true });
 });
 
+// Rotas para servir o Frontend (Inlined)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'admin.html'));
+});
+
 // Iniciar o servidor (Local/Vercel)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`API rodando na porta ${PORT}`);
+  console.log(`API e Site rodando na porta ${PORT}`);
 });
