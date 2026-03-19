@@ -16,8 +16,16 @@ interface Order {
 }
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'metricaup2025';
+const H_EMAIL = '6c1d162092e4828cb7abb1d6e802a47b693d79185e5b63022128f5e1be95ff42';
+const H_PASS  = 'bb3abc9277e6bb56f44ff114d3fabb6fc9e2f5cfaacef38b30809d2a43cc8b5c';
+const H_CODE  = '1f70605832904ce607ab09b924407ce119a6f0dd9bd61e944e3091c65e30d3d6';
+const H_TOKEN = 'f4b4ff99ed0fa4911366ad6dd8f1119149c671516cf2f83634807773680b9d32';
+
+async function sha256(str: string) {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 const PLATFORMS = [
   { key: 'todos', label: 'Todos', emoji: '📊', color: '#6366f1' },
@@ -58,30 +66,44 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const [user, setUser] = useState('');
+  const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
+  const [code, setCode] = useState('');
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      if (user === ADMIN_USER && pass === ADMIN_PASS) {
-        sessionStorage.setItem('admin_auth', '1');
+
+    try {
+      const hEmail = await sha256(email.trim().toLowerCase());
+      const hPass = await sha256(pass);
+      const hCode = await sha256(code.trim());
+
+      if (hEmail === H_EMAIL && hPass === H_PASS && hCode === H_CODE) {
+        if (remember) {
+          localStorage.setItem('admin_auth_token', H_TOKEN);
+        } else {
+          sessionStorage.setItem('admin_auth', '1');
+        }
         onLogin();
       } else {
-        setError('Usuário ou senha inválidos.');
+        setError('Credenciais ou código de segurança incorretos.');
       }
+    } catch {
+      setError('Erro ao processar login.');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2.5 mb-5">
@@ -90,56 +112,86 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
             </div>
             <span className="font-bold text-2xl text-white tracking-tight">Metrica<span className="text-[#f9317a]">Up</span></span>
           </div>
-          <p className="text-white/40 text-sm">Faça login para acessar o painel</p>
+          <p className="text-white/40 text-sm">Acesso Restrito — Controle Administrativo</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-4">
+        <form onSubmit={handleLogin} className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-5">
           <div>
-            <label className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2 block">Usuário</label>
+            <label className="text-[10px] font-bold text-white/30 uppercase tracking-[2px] mb-2 block">E-mail Administrativo</label>
             <input
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-white/30 transition placeholder:text-white/20"
-              placeholder="admin"
-              value={user}
-              onChange={e => { setUser(e.target.value); setError(''); }}
-              autoComplete="username"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm outline-none focus:border-white/30 transition placeholder:text-white/10"
+              placeholder="seu@email.com"
+              type="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setError(''); }}
+              autoComplete="email"
             />
           </div>
-          <div>
-            <label className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2 block">Senha</label>
-            <div className="relative">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-white/30 uppercase tracking-[2px] mb-2 block">Sua Senha</label>
+              <div className="relative">
+                <input
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm outline-none focus:border-white/30 transition placeholder:text-white/10 pr-10"
+                  placeholder="••••••••"
+                  type={showPass ? 'text' : 'password'}
+                  value={pass}
+                  onChange={e => { setPass(e.target.value); setError(''); }}
+                  autoComplete="current-password"
+                />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition">
+                  {showPass ? '👁' : '👁‍🗨'}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-white/30 uppercase tracking-[2px] mb-2 block">Código (PIN)</label>
               <input
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-white/30 transition placeholder:text-white/20 pr-11"
-                placeholder="••••••••"
-                type={showPass ? 'text' : 'password'}
-                value={pass}
-                onChange={e => { setPass(e.target.value); setError(''); }}
-                autoComplete="current-password"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm outline-none focus:border-white/30 transition placeholder:text-white/10"
+                placeholder="0000"
+                maxLength={4}
+                value={code}
+                onChange={e => { setCode(e.target.value.replace(/\D/g, '')); setError(''); }}
               />
-              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition">
-                {showPass ? '👁' : '👁‍🗨'}
-              </button>
             </div>
           </div>
 
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={remember}
+              onChange={e => setRemember(e.target.checked)}
+            />
+            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${remember ? 'bg-[#f9317a] border-[#f9317a]' : 'border-white/10 group-hover:border-white/20'}`}>
+              {remember && (
+                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <span className="text-xs text-white/40 group-hover:text-white/60 transition">Manter-me logado</span>
+          </label>
+
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
-              <span>⚠️</span> {error}
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3.5 text-red-400 text-xs flex items-center gap-2.5 animate-shake">
+              <span className="text-base text-red-500">⚠️</span> {error}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading || !user || !pass}
-            className="w-full bg-[#f9317a] hover:bg-[#e0195f] text-white py-3.5 rounded-xl font-bold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+            disabled={loading || !email || !pass || !code}
+            className="w-full bg-[#f9317a] hover:bg-[#e0195f] text-white py-4 rounded-xl font-bold text-sm transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-pink-900/20"
           >
             {loading ? (
-              <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Entrando...</>
-            ) : 'Entrar no Painel →'}
+              <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Validando...</>
+            ) : 'Acessar Dashboard Admin'}
           </button>
         </form>
 
-        <p className="text-center text-white/20 text-xs mt-6">MetricaUp Admin • Acesso restrito</p>
+        <p className="text-center text-white/10 text-xs mt-8 uppercase tracking-[1px]">Protocolo de Segurança Ativo</p>
       </div>
     </div>
   );
@@ -218,8 +270,12 @@ export default function AdminPage() {
 
   // Auth check
   useEffect(() => {
-    const ok = sessionStorage.getItem('admin_auth') === '1';
-    setAuthed(ok);
+    const sessionAuth = sessionStorage.getItem('admin_auth') === '1';
+    const persistentAuth = localStorage.getItem('admin_auth_token') === H_TOKEN;
+    
+    if (sessionAuth || persistentAuth) {
+      setAuthed(true);
+    }
     setCheckingAuth(false);
   }, []);
 
@@ -261,6 +317,7 @@ export default function AdminPage() {
 
   function logout() {
     sessionStorage.removeItem('admin_auth');
+    localStorage.removeItem('admin_auth_token');
     setAuthed(false);
   }
 
@@ -364,8 +421,16 @@ export default function AdminPage() {
           <a href="/" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition-all">
             <span>🌐</span> <span className="font-medium">Ver Site</span>
           </a>
-          <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
-            <span>🚪</span> <span className="font-medium">Sair</span>
+        </div>
+
+        {/* Logout */}
+        <div className="p-3 border-t border-white/8">
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 transition-all font-medium"
+          >
+            <span>🚪</span>
+            <span>Sair do Painel</span>
           </button>
         </div>
       </aside>
