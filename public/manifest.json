@@ -2,7 +2,7 @@
   "name": "MetricaUp — Crescimento Social",
   "short_name": "MetricaUp",
   "description": "Aumente seus seguidores e curtidas com segurança.",
-  "start_url": "/",
+  "start_url": "/admin",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#f9317a",
