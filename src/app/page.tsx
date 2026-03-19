@@ -313,6 +313,79 @@ function PixScreen({ data, qty, onHome }: { data: { payment_id: number; qr_code_
   );
 }
 
+// ===== REFUND POLICY MODAL =====
+function RefundPolicyModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-[#0f0f17] border border-white/10 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-white/8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center">
+              <span className="text-lg">📋</span>
+            </div>
+            <div>
+              <div className="font-bold text-white text-sm">Política de Reembolso</div>
+              <div className="text-[11px] text-white/30">MetricaUp — Serviços Digitais</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white/70 transition text-sm">✕</button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4 text-sm">
+          {/* Rule 1 */}
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-base">✅</span>
+            </div>
+            <div>
+              <div className="font-semibold text-white mb-1">Pedido não iniciado — Reembolso total</div>
+              <div className="text-white/50 text-xs leading-relaxed">Se o seu pedido ainda não foi iniciado pelo fornecedor, você tem direito ao reembolso integral do valor pago, sem taxas adicionais.</div>
+            </div>
+          </div>
+
+          {/* Rule 2 */}
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-base">❌</span>
+            </div>
+            <div>
+              <div className="font-semibold text-white mb-1">Pedido iniciado ou entregue — Sem reembolso</div>
+              <div className="text-white/50 text-xs leading-relaxed">Assim que o pedido é enviado ao fornecedor digital, o custo é repassado imediatamente e não pode ser estornado. Isso inclui casos em que a entrega já foi iniciada parcialmente.</div>
+            </div>
+          </div>
+
+          {/* Info box */}
+          <div className="bg-blue-500/5 border border-blue-500/15 rounded-2xl px-4 py-3.5">
+            <div className="flex items-start gap-2.5">
+              <span className="text-blue-400 flex-shrink-0 mt-0.5">ℹ️</span>
+              <div className="text-xs text-white/50 leading-relaxed">
+                <strong className="text-white/70 font-semibold">Por que não reembolsamos pedidos em andamento?</strong>
+                {' '}Diferente de produtos físicos, serviços digitais são processados em tempo real por fornecedores externos. O custo é debitado no momento do envio, tornando o estorno inviável.
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="text-xs text-white/30 text-center">Em caso de dúvidas, abra nosso chat de suporte no WhatsApp.</div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-5">
+          <button
+            onClick={onClose}
+            className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-2xl font-semibold text-sm transition"
+          >
+            Entendi
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ===== CHECKOUT SECTION =====
 function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack: () => void; onPix: (d: { payment_id: number; qr_code_base64: string; qr_code_texto: string }, q: QtyOption) => void }) {
   const [qtyIdx, setQtyIdx] = useState(0);
@@ -322,6 +395,8 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
 
   const qty: QtyOption = mode === 'grid'
     ? service.qtys[qtyIdx]
@@ -443,15 +518,53 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
                 <span className="text-4xl font-bold text-gray-900">{qty.p ? formatPrice(qty.p) : 'R$ 0,00'}</span>
               </div>
             </div>
+            {/* Refund Policy Checkbox */}
+            <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-4">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <button
+                  type="button"
+                  onClick={() => setAccepted(v => !v)}
+                  className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                    accepted
+                      ? 'bg-purple-600 border-purple-500'
+                      : 'bg-transparent border-white/20 group-hover:border-white/40'
+                  }`}
+                >
+                  {accepted && (
+                    <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+                <span className="text-xs text-white/50 leading-relaxed">
+                  Li e concordo com a{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowRefundModal(true)}
+                    className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition font-semibold"
+                  >
+                    Política de Reembolso
+                  </button>
+                  . Entendo que pedidos já iniciados não podem ser reembolsados.
+                </span>
+              </label>
+            </div>
+
+            {showRefundModal && <RefundPolicyModal onClose={() => setShowRefundModal(false)} />}
+
             <button
               onClick={pay}
-              disabled={loading || !qty.q}
-              className="w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-base hover:bg-green-600 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+              disabled={loading || !qty.q || !accepted}
+              className={`w-full py-4 rounded-2xl font-bold text-base transition ${
+                accepted && qty.q && !loading
+                  ? 'bg-green-500 text-white hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-100'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Gerando PIX...</span>
               ) : (
-                '💰 Pagar com PIX'
+                accepted ? '💰 Pagar com PIX' : '🔒 Aceite os termos para continuar'
               )}
             </button>
             <div className="flex items-center justify-center gap-3 mt-4">
