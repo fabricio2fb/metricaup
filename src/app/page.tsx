@@ -252,6 +252,15 @@ function PixScreen({ data, qty, onHome }: { data: { payment_id: number; qr_code_
     setTimeout(() => setCopied(false), 2000);
   }
 
+  useEffect(() => {
+    if (paid && typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'Purchase', {
+        value: qty.p,
+        currency: 'BRL',
+      });
+    }
+  }, [paid, qty.p]);
+
   if (paid) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
@@ -666,6 +675,16 @@ export default function Home() {
   const [pixData, setPixData] = useState<{ payment_id: number; qr_code_base64: string; qr_code_texto: string } | null>(null);
   const [pixQty, setPixQty] = useState<QtyOption | null>(null);
   const [tracking, setTracking] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      if (view === 'home') {
+        (window as any).fbq('track', 'PageView');
+      } else if (view === 'checkout') {
+        (window as any).fbq('track', 'InitiateCheckout');
+      }
+    }
+  }, [view]);
 
   function goHome() {
     setView('home'); setPlatKey(''); setService(null); setPixData(null); setPixQty(null);
