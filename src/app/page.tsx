@@ -406,6 +406,15 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
   const [loading, setLoading] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
+  const [pubLinks, setPubLinks] = useState<string[]>(['']);
+
+  const isProfile = service.cat === 'seguidores';
+
+  function normalizeProfileLink(raw: string): string {
+    const val = raw.trim().replace(/^@/, '');
+    if (val.startsWith('http')) return val;
+    return `https://instagram.com/${val}`;
+  }
 
   const qty: QtyOption = mode === 'grid'
     ? service.qtys[qtyIdx]
@@ -417,7 +426,14 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
     })();
 
   async function pay() {
-    if (!link.trim()) { alert('Cole o link do perfil'); return; }
+    const activeLink = isProfile
+      ? normalizeProfileLink(link)
+      : pubLinks.filter(l => l.trim()).join(',');
+
+    if (!activeLink) {
+      alert(isProfile ? 'Cole o link ou @ do perfil' : 'Adicione pelo menos um link de publicação');
+      return;
+    }
     if (!qty.q) { alert('Escolha uma quantidade'); return; }
     if (!email.includes('@')) { alert('E-mail inválido'); return; }
     setLoading(true);
@@ -426,7 +442,7 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
       const res = await fetch('/api/criar-pix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, email, whatsapp, link, service: service.name, qty: qty.q, val: qty.p })
+        body: JSON.stringify({ id, email, whatsapp, link: activeLink, service: service.name, qty: qty.q, val: qty.p })
       });
       const d = await res.json();
       if (!res.ok || d.error) throw new Error(d.error);
@@ -458,13 +474,59 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
 
           {/* Link */}
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 block">1. Link do Perfil / Publicação</label>
-            <input
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm outline-none focus:border-gray-900 transition"
-              placeholder="https://instagram.com/seuperfil"
-              value={link}
-              onChange={e => setLink(e.target.value)}
-            />
+            {isProfile ? (
+              <>
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-400 block mb-1">1. Link do Perfil</label>
+                <div className="text-xs text-gray-400 mb-3">Aceita link completo ou somente o @usuário</div>
+                <input
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm outline-none focus:border-gray-900 transition"
+                  placeholder="https://instagram.com/seuperfil ou @seuperfil"
+                  value={link}
+                  onChange={e => setLink(e.target.value)}
+                />
+              </>
+            ) : (
+              <>
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-400 block mb-3">1. Link da Publicação</label>
+                <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-3 mb-4 flex items-start gap-2.5">
+                  <span className="text-yellow-500 mt-0.5">⚠️</span>
+                  <div className="text-xs text-yellow-700 leading-relaxed">
+                    Publicações só aceitam links diretos do post (ex: instagram.com/p/xxx). Os <strong className="font-semibold">{formatQty(qty.q || 0)}</strong> itens serão divididos automaticamente entre as <strong className="font-semibold">{pubLinks.filter(l => l.trim()).length || 1}</strong> publicações no checkout.
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {pubLinks.map((pLink, i) => (
+                    <div key={i} className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 select-none">#{i + 1}</div>
+                      <input
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-10 py-3.5 text-sm outline-none focus:border-gray-800 transition"
+                        placeholder="Link da publicação..."
+                        value={pLink}
+                        onChange={e => {
+                          const newLinks = [...pubLinks];
+                          newLinks[i] = e.target.value;
+                          setPubLinks(newLinks);
+                        }}
+                      />
+                      {pubLinks.length > 1 && (
+                        <button
+                          onClick={() => setPubLinks(pubLinks.filter((_, idx) => idx !== i))}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setPubLinks([...pubLinks, ''])}
+                    className="w-full border-2 border-dashed border-gray-200 rounded-xl py-3.5 text-sm font-semibold text-gray-500 hover:text-gray-900 hover:border-gray-300 hover:bg-gray-50 transition"
+                  >
+                    + Adicionar publicação
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Quantity */}
@@ -520,8 +582,45 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
                 <span className="text-gray-400">Quantidade</span>
                 <span className="font-semibold text-gray-700">{qty.q ? formatQty(qty.q) + ' unid.' : '—'}</span>
               </div>
+              
+              {!isProfile && pubLinks.filter(l => l.trim()).length > 1 && (
+                <div className="bg-green-50 border border-green-100 rounded-xl p-4 mt-4">
+                  <div className="text-[10px] font-bold text-green-700 mb-2 uppercase tracking-wide">📊 DIVISÃO AUTOMÁTICA NO CHECKOUT</div>
+                  <div className="space-y-1.5">
+                    {pubLinks.filter(l => l.trim()).map((l, i, arr) => {
+                      const total = arr.length;
+                      const base = Math.floor((qty.q || 0) / total);
+                      const rem = (qty.q || 0) % total;
+                      const amnt = base + (i < rem ? 1 : 0);
+                      
+                      let shortUrl = l.trim();
+                      try {
+                        const u = new URL(shortUrl.startsWith('http') ? shortUrl : `https://${shortUrl}`);
+                        shortUrl = u.pathname.substring(0, 15) + (u.pathname.length > 15 ? '...' : '');
+                        if (shortUrl === '/' || shortUrl.length < 3) shortUrl = `Publicação #${i + 1}`;
+                      } catch {
+                        shortUrl = `Publicação #${i + 1}`;
+                      }
+
+                      return (
+                        <div key={i} className="flex justify-between text-xs items-center">
+                          <span className="text-green-600 truncate mr-2" title={l.trim()}>{shortUrl}</span>
+                          <span className="font-bold text-green-700 whitespace-nowrap">{formatQty(amnt)} unid.</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {!isProfile && pubLinks.filter(l => l.trim()).length <= 1 && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mt-4 flex items-start gap-2.5">
+                  <span className="text-blue-500 text-[10px] mt-0.5">ℹ️</span>
+                  <span className="text-[11px] text-blue-700 leading-relaxed font-medium">Adicione mais publicações para dividir os itens automaticamente.</span>
+                </div>
+              )}
+
             </div>
-            <div className="border-t border-dashed border-gray-200 pt-5 mb-6">
+            <div className="border-t border-dashed border-gray-200 pt-5 mb-6 mt-5">
               <div className="flex justify-between items-end">
                 <span className="text-sm font-semibold text-gray-400">Total</span>
                 <span className="text-4xl font-bold text-gray-900">{qty.p ? formatPrice(qty.p) : 'R$ 0,00'}</span>
