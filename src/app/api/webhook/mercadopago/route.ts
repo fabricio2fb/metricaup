@@ -16,11 +16,7 @@ const STATUS_MAP: Record<string, string> = {
 
 async function sendPushNotification(title: string, body: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? `https://${process.env.VERCEL_URL || 'metricaup.vercel.app'}`
-      : 'http://localhost:3000';
-
-    await fetch(`${baseUrl}/api/notify`, {
+    await fetch('https://www.metricaup.shop/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, body, url: '/admin' }),
@@ -30,19 +26,47 @@ async function sendPushNotification(title: string, body: string) {
   }
 }
 
+async function sendToUtmify(paymentId: string | number, mpData: any) {
+  try {
+    await fetch('https://api.utmify.com.br/api-credentials/orders', {
+      method: 'POST',
+      headers: {
+        'x-api-token': process.env.UTMIFY_API_TOKEN || '',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        orderId: String(paymentId),
+        status: 'paid',
+        customerName: mpData.payer?.first_name || 'Cliente',
+        customerEmail: mpData.payer?.email || '',
+        customerPhone: mpData.payer?.phone?.number || '',
+        totalPrice: mpData.transaction_amount,
+        paymentMethod: mpData.payment_type_id === 'credit_card' ? 'credit_card' : 'pix',
+        items: [
+          {
+            title: mpData.description || 'Pedido Apoiêfy',
+            quantity: 1,
+            unitPrice: mpData.transaction_amount,
+          },
+        ],
+      }),
+    });
+    console.log(`UTMify: venda registrada — mp_id=${paymentId}`);
+  } catch (err) {
+    console.error('UTMify: erro ao registrar venda:', err);
+  }
+}
+
 export async function POST(req: NextRequest) {
-  // IMPORTANTE: sempre retornar 200 para o MP parar de reenviar
   try {
     const body = await req.json();
 
-    // Ignorar notificações que não são de pagamento
     if (body.type !== 'payment' || !body.data?.id) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
     const paymentId = body.data.id;
 
-    // Buscar o pagamento no Mercado Pago
     let mpData;
     try {
       mpData = await payment.get({ id: Number(paymentId) });
@@ -57,7 +81,6 @@ export async function POST(req: NextRequest) {
 
     const novoStatus = STATUS_MAP[mpData.status] || 'Aguardando Pagamento';
 
-    // Atualizar no Supabase pelo mp_id
     const { error } = await supabase
       .from('pedidos')
       .update({ status: novoStatus })
@@ -69,15 +92,17 @@ export async function POST(req: NextRequest) {
       console.log(`Webhook: pedido mp_id=${paymentId} → ${novoStatus}`);
     }
 
-    // 🔔 Disparar push notification quando pagamento for aprovado
     if (mpData.status === 'approved') {
       const amount = mpData.transaction_amount
         ? `R$ ${Number(mpData.transaction_amount).toFixed(2).replace('.', ',')}`
         : '';
+
       await sendPushNotification(
         '💰 Pagamento Aprovado!',
         `Novo pedido confirmado${amount ? ' — ' + amount : ''}. Acesse o painel para ver os detalhes.`
       );
+
+      await sendToUtmify(paymentId, mpData);
     }
 
     return NextResponse.json({ received: true, status: novoStatus }, { status: 200 });
