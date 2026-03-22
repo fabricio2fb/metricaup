@@ -255,6 +255,99 @@ function PushBell() {
   );
 }
 
+interface Gasto {
+  id: string;
+  data: string;
+  ads: number;
+  plataforma: number;
+}
+
+// ─── GASTOS TAB ─────────────────────────────────────────────────────────────
+function GastosTab({ gastos, reloadGastos }: { gastos: Gasto[]; reloadGastos: () => void }) {
+  const [ads, setAds] = useState('');
+  const [plat, setPlat] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [saving, setSaving] = useState(false);
+
+  async function addGasto(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    await fetch('/api/gastos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ads, plataforma: plat, data: date })
+    });
+    setAds('');
+    setPlat('');
+    reloadGastos();
+    setSaving(false);
+  }
+
+  async function deleteGasto(id: string) {
+    if (!confirm('Excluir este registo?')) return;
+    await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
+    reloadGastos();
+  }
+
+  return (
+    <div className="space-y-4">
+      <form onSubmit={addGasto} className="bg-white/5 border border-white/10 rounded-2xl p-5 md:flex gap-4 items-end">
+        <div className="flex-1 space-y-3 md:space-y-0 md:flex gap-4">
+          <div className="flex-1">
+            <label className="text-xs text-white/60 mb-1 block">Data</label>
+            <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/30" style={{ colorScheme: 'dark' }} />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs text-white/60 mb-1 block">Ads (R$)</label>
+            <input type="number" required step="0.01" value={ads} onChange={e => setAds(e.target.value)} placeholder="0.00" className="w-full bg-[#111] border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs text-white/60 mb-1 block">Plataforma (R$)</label>
+            <input type="number" required step="0.01" value={plat} onChange={e => setPlat(e.target.value)} placeholder="0.00" className="w-full bg-[#111] border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
+          </div>
+        </div>
+        <button type="submit" disabled={saving} className="mt-4 md:mt-0 px-5 py-2.5 bg-[#f9317a] hover:bg-[#e0195f] text-white font-bold text-sm rounded-xl transition shadow-lg w-full md:w-auto flex-shrink-0 disabled:opacity-50">
+          {saving ? 'Salvando...' : 'Adicionar'}
+        </button>
+      </form>
+
+      <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-white/5 border-b border-white/10 text-xs text-white/40 uppercase tracking-wider">
+            <tr>
+              <th className="px-4 py-3 font-medium">Data</th>
+              <th className="px-4 py-3 font-medium">Ads</th>
+              <th className="px-4 py-3 font-medium">Plataforma</th>
+              <th className="px-4 py-3 font-medium">Total Dia</th>
+              <th className="px-4 py-3 font-medium w-16"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {gastos.length === 0 ? (
+              <tr><td colSpan={5} className="py-8 text-center text-white/30">Nenhum gasto registrado</td></tr>
+            ) : gastos.map(g => {
+              const total = Number(g.ads) + Number(g.plataforma);
+              return (
+                <tr key={g.id} className="hover:bg-white/3 transition">
+                  <td className="px-4 py-3 text-white/80">{g.data.split('-').reverse().join('/')}</td>
+                  <td className="px-4 py-3 text-red-400">R$ {Number(g.ads).toFixed(2).replace('.', ',')}</td>
+                  <td className="px-4 py-3 text-red-400">R$ {Number(g.plataforma).toFixed(2).replace('.', ',')}</td>
+                  <td className="px-4 py-3 font-bold text-white">R$ {total.toFixed(2).replace('.', ',')}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => deleteGasto(g.id)} className="text-white/30 hover:text-red-400 hover:bg-red-400/10 p-1.5 rounded-lg transition" title="Excluir">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6L18.2 20.4A2 2 0 0 1 16.2 22H7.8a2 2 0 0 1-2-1.6L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN ADMIN ───────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
@@ -264,13 +357,12 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [platFilter, setPlatFilter] = useState('todos');
-  const [activeTab, setActiveTab] = useState<'orders' | 'analytics'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'gastos'>('orders');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
-  const [adsExpenseStr, setAdsExpenseStr] = useState('');
-  const [platformExpenseStr, setPlatformExpenseStr] = useState('');
+  const [gastos, setGastos] = useState<Gasto[]>([]);
 
   // Auth check
   useEffect(() => {
@@ -321,10 +413,7 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/gastos');
       const data = await res.json();
-      if (data && !data.error) {
-        if (data.ads !== undefined) setAdsExpenseStr(data.ads.toString());
-        if (data.plataforma !== undefined) setPlatformExpenseStr(data.plataforma.toString());
-      }
+      if (Array.isArray(data)) setGastos(data);
     } catch {}
   }, []);
 
@@ -334,16 +423,6 @@ export default function AdminPage() {
       loadGastos();
     }
   }, [authed, loadOrders, loadGastos]);
-
-  async function saveGastos(ads: string, plat: string) {
-    try {
-      await fetch('/api/gastos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ads, plataforma: plat })
-      });
-    } catch {}
-  }
 
   async function advanceStatus(id: string, current: string) {
     const next = STATUSES[(STATUSES.indexOf(current) + 1) % STATUSES.length];
@@ -406,9 +485,11 @@ export default function AdminPage() {
     const revenue = approved.reduce((s, o) => s + Number(o.val), 0);
     const pending = src.filter(o => o.status === 'Aguardando Pagamento').length;
     const conv = src.length > 0 ? Math.round((approved.length / src.length) * 100) : 0;
-    const roi = revenue - (Number(adsExpenseStr) || 0) - (Number(platformExpenseStr) || 0);
+    const totalAds = gastos.reduce((acc, g) => acc + Number(g.ads), 0);
+    const totalPlat = gastos.reduce((acc, g) => acc + Number(g.plataforma), 0);
+    const roi = revenue - totalAds - totalPlat;
     return { total: src.length, approved: approved.length, revenue, pending, conv, roi };
-  }, [orders, platFilter, adsExpenseStr, platformExpenseStr]);
+  }, [orders, platFilter, gastos]);
 
   if (checkingAuth) {
     return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /></div>;
@@ -443,57 +524,16 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="p-3 border-b border-white/8">
-          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics']] as const).map(([id, icon, label]) => (
+          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics'], ['gastos', '💸', 'Gastos']] as const).map(([id, icon, label]) => (
             <button
               key={id}
-              onClick={() => { setActiveTab(id); setSidebarOpen(false); }}
+              onClick={() => { setActiveTab(id as any); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all mb-0.5 ${activeTab === id ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
             >
               <span>{icon}</span>
               <span className="font-medium">{label}</span>
             </button>
           ))}
-        </div>
-
-        {/* Gastos */}
-        <div className="p-3 border-b border-white/8">
-          <div className="text-[10px] text-white/25 uppercase tracking-widest px-3 mb-2 font-semibold">Gastos</div>
-          <div className="px-3 space-y-3 mt-2">
-            <div>
-              <label className="text-xs text-white/60 mb-1 flex items-center justify-between">
-                <span>Ads</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 text-xs">R$</span>
-                <input 
-                  type="number"
-                  value={adsExpenseStr}
-                  onChange={e => setAdsExpenseStr(e.target.value)}
-                  onBlur={() => saveGastos(adsExpenseStr, platformExpenseStr)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white outline-none focus:border-white/25 transition placeholder:text-white/20"
-                  placeholder="0.00"
-                  step="0.01"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-white/60 mb-1 flex items-center justify-between">
-                <span>Plataforma</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 text-xs">R$</span>
-                <input 
-                  type="number"
-                  value={platformExpenseStr}
-                  onChange={e => setPlatformExpenseStr(e.target.value)}
-                  onBlur={() => saveGastos(adsExpenseStr, platformExpenseStr)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white outline-none focus:border-white/25 transition placeholder:text-white/20"
-                  placeholder="0.00"
-                  step="0.01"
-                />
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Platform filters */}
@@ -631,6 +671,11 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* GASTOS TAB */}
+          {activeTab === 'gastos' && (
+            <GastosTab gastos={gastos} reloadGastos={loadGastos} />
           )}
 
           {/* ORDERS TAB */}
