@@ -269,6 +269,8 @@ export default function AdminPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [adsExpenseStr, setAdsExpenseStr] = useState('');
+  const [platformExpenseStr, setPlatformExpenseStr] = useState('');
 
   // Auth check
   useEffect(() => {
@@ -315,11 +317,33 @@ export default function AdminPage() {
     setLoading(false);
   }, []);
 
+  const loadGastos = useCallback(async () => {
+    try {
+      const res = await fetch('/api/gastos');
+      const data = await res.json();
+      if (data && !data.error) {
+        if (data.ads !== undefined) setAdsExpenseStr(data.ads.toString());
+        if (data.plataforma !== undefined) setPlatformExpenseStr(data.plataforma.toString());
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (authed) {
       loadOrders();
+      loadGastos();
     }
-  }, [authed, loadOrders]);
+  }, [authed, loadOrders, loadGastos]);
+
+  async function saveGastos(ads: string, plat: string) {
+    try {
+      await fetch('/api/gastos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ads, plataforma: plat })
+      });
+    } catch {}
+  }
 
   async function advanceStatus(id: string, current: string) {
     const next = STATUSES[(STATUSES.indexOf(current) + 1) % STATUSES.length];
@@ -382,8 +406,9 @@ export default function AdminPage() {
     const revenue = approved.reduce((s, o) => s + Number(o.val), 0);
     const pending = src.filter(o => o.status === 'Aguardando Pagamento').length;
     const conv = src.length > 0 ? Math.round((approved.length / src.length) * 100) : 0;
-    return { total: src.length, approved: approved.length, revenue, pending, conv };
-  }, [orders, platFilter]);
+    const roi = revenue - (Number(adsExpenseStr) || 0) - (Number(platformExpenseStr) || 0);
+    return { total: src.length, approved: approved.length, revenue, pending, conv, roi };
+  }, [orders, platFilter, adsExpenseStr, platformExpenseStr]);
 
   if (checkingAuth) {
     return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /></div>;
@@ -428,6 +453,47 @@ export default function AdminPage() {
               <span className="font-medium">{label}</span>
             </button>
           ))}
+        </div>
+
+        {/* Gastos */}
+        <div className="p-3 border-b border-white/8">
+          <div className="text-[10px] text-white/25 uppercase tracking-widest px-3 mb-2 font-semibold">Gastos</div>
+          <div className="px-3 space-y-3 mt-2">
+            <div>
+              <label className="text-xs text-white/60 mb-1 flex items-center justify-between">
+                <span>Ads</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 text-xs">R$</span>
+                <input 
+                  type="number"
+                  value={adsExpenseStr}
+                  onChange={e => setAdsExpenseStr(e.target.value)}
+                  onBlur={() => saveGastos(adsExpenseStr, platformExpenseStr)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white outline-none focus:border-white/25 transition placeholder:text-white/20"
+                  placeholder="0.00"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-white/60 mb-1 flex items-center justify-between">
+                <span>Plataforma</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 text-xs">R$</span>
+                <input 
+                  type="number"
+                  value={platformExpenseStr}
+                  onChange={e => setPlatformExpenseStr(e.target.value)}
+                  onBlur={() => saveGastos(adsExpenseStr, platformExpenseStr)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white outline-none focus:border-white/25 transition placeholder:text-white/20"
+                  placeholder="0.00"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Platform filters */}
@@ -516,11 +582,12 @@ export default function AdminPage() {
 
         <div className="p-4 md:p-7">
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
             <StatCard icon="📦" label="Pedidos" value={stats.total} />
             <StatCard icon="✅" label="Aprovados" value={stats.approved} sub={`${stats.conv}% conversão`} />
             <StatCard icon="⏳" label="Aguardando" value={stats.pending} />
             <StatCard icon="💰" label="Receita" value={`R$ ${stats.revenue.toFixed(2).replace('.', ',')}`} />
+            <StatCard icon="📈" label="ROI" value={`R$ ${stats.roi.toFixed(2).replace('.', ',')}`} />
           </div>
 
           {/* ANALYTICS TAB */}
