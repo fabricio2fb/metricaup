@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { supabase } from '@/lib/supabase';
 import { sendAdminNotification } from '@/lib/push';
+import { sendUTMifyEvent } from '@/lib/utmify';
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
 const payment = new Payment(client);
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, email, whatsapp, link, service, platform, qty, val } = await req.json();
+    const { id, email, whatsapp, link, service, platform, qty, val, utmParams } = await req.json();
 
     const body = {
       transaction_amount: Number(val),
@@ -27,7 +28,14 @@ export async function POST(req: NextRequest) {
       status: 'Aguardando Pagamento',
     };
 
-    const { error } = await supabase.from('pedidos').insert([{ id, email, whatsapp, link, service, platform, qty, val, ...pixData }]);
+    const { error } = await supabase.from('pedidos').insert([{
+      id, email, whatsapp, link, service, platform, qty, val, ...pixData,
+      utm_source: utmParams?.source,
+      utm_medium: utmParams?.medium,
+      utm_campaign: utmParams?.campaign,
+      utm_content: utmParams?.content,
+      utm_term: utmParams?.term
+    }]);
     if (error) throw error;
 
     // 🔔 Push — novo pedido pendente entrando
@@ -35,6 +43,18 @@ export async function POST(req: NextRequest) {
       '⏳ Novo Pedido Aguardando Pagamento',
       `${service} — R$ ${Number(val).toFixed(2).replace('.', ',')} · ${email}`
     );
+
+    // 🚀 UTMify — Registrar início do checkout (aguardando pagamento)
+    await sendUTMifyEvent({
+      orderId: id,
+      status: 'waiting_payment',
+      email,
+      phone: whatsapp,
+      totalPrice: Number(val),
+      productName: service,
+      qty: Number(qty),
+      utmParams
+    });
 
     return NextResponse.json({
       payment_id: mpResponse.id,

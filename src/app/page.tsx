@@ -396,7 +396,7 @@ function RefundPolicyModal({ onClose }: { onClose: () => void }) {
 }
 
 // ===== CHECKOUT SECTION =====
-function CheckoutSection({ service, platKey, onBack, onPix }: { service: Service; platKey: string; onBack: () => void; onPix: (d: { payment_id: number; qr_code_base64: string; qr_code_texto: string }, q: QtyOption) => void }) {
+function CheckoutSection({ service, platKey, utmParams, onBack, onPix }: { service: Service; platKey: string; utmParams: any; onBack: () => void; onPix: (d: { payment_id: number; qr_code_base64: string; qr_code_texto: string }, q: QtyOption) => void }) {
   const [qtyIdx, setQtyIdx] = useState(0);
   const [mode, setMode] = useState<'grid' | 'custom'>('grid');
   const [customVal, setCustomVal] = useState('');
@@ -450,7 +450,8 @@ function CheckoutSection({ service, platKey, onBack, onPix }: { service: Service
           service: service.name,
           platform: platKey,
           qty: qty.q,
-          val: qty.p
+          val: qty.p,
+          utmParams
         }),
       });
       const d = await res.json();
@@ -806,6 +807,21 @@ export default function Home() {
   const [pixData, setPixData] = useState<{ payment_id: number; qr_code_base64: string; qr_code_texto: string } | null>(null);
   const [pixQty, setPixQty] = useState<QtyOption | null>(null);
   const [tracking, setTracking] = useState(false);
+  const [utmParams, setUtmParams] = useState<any>({});
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const params = {
+        source: sp.get('utm_source') || '',
+        medium: sp.get('utm_medium') || '',
+        campaign: sp.get('utm_campaign') || '',
+        content: sp.get('utm_content') || '',
+        term: sp.get('utm_term') || ''
+      };
+      setUtmParams(params);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).fbq) {
@@ -994,6 +1010,7 @@ export default function Home() {
           <CheckoutSection
             service={service}
             platKey={platKey}
+            utmParams={utmParams}
             onBack={() => { setView('services'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             onPix={(d, q) => { setPixData(d); setPixQty(q); setView('pix'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           />

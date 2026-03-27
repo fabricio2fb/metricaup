@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { supabase } from '@/lib/supabase';
+import { sendUTMifyEvent } from '@/lib/utmify';
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
 const payment = new Payment(client);
@@ -26,36 +27,6 @@ async function sendPushNotification(title: string, body: string) {
   }
 }
 
-async function sendToUtmify(paymentId: string | number, mpData: any) {
-  try {
-    await fetch('https://api.utmify.com.br/api-credentials/orders', {
-      method: 'POST',
-      headers: {
-        'x-api-token': process.env.UTMIFY_API_TOKEN || '',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        orderId: String(paymentId),
-        status: 'paid',
-        customerName: mpData.payer?.first_name || 'Cliente',
-        customerEmail: mpData.payer?.email || '',
-        customerPhone: mpData.payer?.phone?.number || '',
-        totalPrice: mpData.transaction_amount,
-        paymentMethod: mpData.payment_type_id === 'credit_card' ? 'credit_card' : 'pix',
-        items: [
-          {
-            title: mpData.description || 'Pedido Apoiêfy',
-            quantity: 1,
-            unitPrice: mpData.transaction_amount,
-          },
-        ],
-      }),
-    });
-    console.log(`UTMify: venda registrada — mp_id=${paymentId}`);
-  } catch (err) {
-    console.error('UTMify: erro ao registrar venda:', err);
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -102,7 +73,31 @@ export async function POST(req: NextRequest) {
         `Novo pedido confirmado${amount ? ' — ' + amount : ''}. Acesse o painel para ver os detalhes.`
       );
 
-      await sendToUtmify(paymentId, mpData);
+      // 🚀 UTMify — Registrar venda aprovada com as UTMs originais
+      const { data: pedido } = await supabase
+        .from('pedidos')
+        .select('*')
+        .eq('mp_id', String(paymentId))
+        .single();
+
+      if (pedido) {
+        await sendUTMifyEvent({
+          orderId: pedido.id,
+          status: 'paid',
+          email: pedido.email,
+          phone: pedido.whatsapp,
+          totalPrice: Number(pedido.val),
+          productName: pedido.service,
+          qty: Number(pedido.qty),
+          utmParams: {
+            source: pedido.utm_source,
+            medium: pedido.utm_medium,
+            campaign: pedido.utm_campaign,
+            content: pedido.utm_content,
+            term: pedido.utm_term
+          }
+        });
+      }
     }
 
     return NextResponse.json({ received: true, status: novoStatus }, { status: 200 });
