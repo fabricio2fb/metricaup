@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { PLATFORMS, findService, formatPrice, formatQty, type Service, type QtyOption } from '@/lib/platforms';
+import { useState, useEffect, useMemo } from 'react';
+import { findServiceIn, formatPrice, formatQty, type Platform, type Service, type QtyOption } from '@/lib/platforms';
 
 type View = 'home' | 'services' | 'checkout' | 'pix';
 
@@ -396,7 +396,7 @@ function RefundPolicyModal({ onClose }: { onClose: () => void }) {
 }
 
 // ===== CHECKOUT SECTION =====
-function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack: () => void; onPix: (d: { payment_id: number; qr_code_base64: string; qr_code_texto: string }, q: QtyOption) => void }) {
+function CheckoutSection({ service, platKey, onBack, onPix }: { service: Service; platKey: string; onBack: () => void; onPix: (d: { payment_id: number; qr_code_base64: string; qr_code_texto: string }, q: QtyOption) => void }) {
   const [qtyIdx, setQtyIdx] = useState(0);
   const [mode, setMode] = useState<'grid' | 'custom'>('grid');
   const [customVal, setCustomVal] = useState('');
@@ -442,7 +442,16 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
       const res = await fetch('/api/criar-pix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, email, whatsapp, link: activeLink, service: service.name, qty: qty.q, val: qty.p })
+        body: JSON.stringify({
+          id: id,
+          email,
+          whatsapp,
+          link: activeLink,
+          service: service.name,
+          platform: platKey,
+          qty: qty.q,
+          val: qty.p
+        }),
       });
       const d = await res.json();
       if (!res.ok || d.error) throw new Error(d.error);
@@ -700,8 +709,7 @@ function CheckoutSection({ service, onBack, onPix }: { service: Service; onBack:
 }
 
 // ===== SERVICES SECTION =====
-function ServicesSection({ platKey, onBack, onSelect }: { platKey: string; onBack: () => void; onSelect: (id: string) => void }) {
-  const plat = PLATFORMS[platKey];
+function ServicesSection({ plat, onBack, onSelect }: { plat: Platform; onBack: () => void; onSelect: (id: string) => void }) {
   const cats = ['todos', ...new Set(plat.services.map(s => s.cat))];
   const [cat, setCat] = useState('todos');
   const CAT_LABELS: Record<string, string> = { todos: 'Todos', seguidores: '👤 Seguidores', curtidas: '❤️ Curtidas', views: '👁️ Views', comentarios: '💬 Comentários', compartilhamentos: '🔁 Compartilhamentos' };
@@ -720,7 +728,13 @@ function ServicesSection({ platKey, onBack, onSelect }: { platKey: string; onBac
           <div className="font-bold text-5xl text-white mb-3 tracking-tight">{plat.name}</div>
           <div className="text-white/80 text-base max-w-sm leading-relaxed">{plat.desc}</div>
         </div>
-        <div className="text-[120px] opacity-20 select-none leading-none">{plat.emoji}</div>
+        <div className="absolute right-0 bottom-0 top-0 w-1/2 flex items-center justify-center pointer-events-none overflow-hidden">
+          {plat.logo_svg ? (
+            <div className="w-64 h-64 text-white opacity-[0.15] -rotate-12 translate-x-12 translate-y-12" dangerouslySetInnerHTML={{ __html: plat.logo_svg }} />
+          ) : (
+            <div className="text-[120px] opacity-20 select-none leading-none">{plat.emoji}</div>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -768,6 +782,24 @@ const PLAT_CLASSES: Record<string, string> = {
 };
 
 export default function Home() {
+  const [platforms, setPlatforms] = useState<Record<string, Platform>>({});
+  const [loadingPlat, setLoadingPlat] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch('/api/platforms');
+        const data = await res.json();
+        if (data && !data.error) setPlatforms(data);
+      } catch (err) {
+        console.error('Erro ao carregar plataformas:', err);
+      } finally {
+        setLoadingPlat(false);
+      }
+    }
+    load();
+  }, []);
+
   const [view, setView] = useState<View>('home');
   const [platKey, setPlatKey] = useState('');
   const [service, setService] = useState<Service | null>(null);
@@ -790,6 +822,17 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  if (loadingPlat) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-[#f9317a]/20 border-t-[#f9317a] rounded-full animate-spin" />
+          <span className="text-sm font-medium text-gray-400">Carregando ofertas...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* NAV */}
@@ -798,7 +841,8 @@ export default function Home() {
           Metrica<em className="text-[#f9317a] not-italic">Up</em>
         </button>
         <button onClick={() => setTracking(true)} className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-gray-500 px-3 md:px-4 py-2 rounded-full hover:bg-gray-100 transition">
-          <span>📦</span> <span className="hidden sm:inline">Rastrear Pedido</span><span className="sm:hidden">Pedido</span>
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+          📦 Rastrear Pedido
         </button>
       </nav>
 
@@ -836,14 +880,20 @@ export default function Home() {
 
             {/* Platform cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(PLATFORMS).map(([key, p]) => (
+              {Object.entries(platforms).map(([key, p]) => (
                 <button
                   key={key}
                   onClick={() => { setPlatKey(key); setView('services'); window.scrollTo({ top: 0 }); }}
                   className={`bg-gradient-to-br ${PLAT_CLASSES[key]} rounded-2xl md:rounded-3xl p-7 md:p-10 text-left relative overflow-hidden min-h-52 md:min-h-64 flex flex-col justify-between group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="w-14 h-14 md:w-[68px] md:h-[68px] rounded-xl md:rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center text-2xl md:text-3xl">{p.emoji}</div>
+                    <div className="w-14 h-14 md:w-[68px] md:h-[68px] rounded-xl md:rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                      {p.logo_svg ? (
+                        <div className="w-7 h-7 md:w-9 md:h-9 text-white" dangerouslySetInnerHTML={{ __html: p.logo_svg }} />
+                      ) : (
+                        <span className="text-2xl md:text-3xl">{p.emoji}</span>
+                      )}
+                    </div>
                     <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white text-sm border border-white/20 group-hover:bg-white/30 transition">↗</div>
                   </div>
                   <div>
@@ -854,7 +904,13 @@ export default function Home() {
                       ))}
                     </div>
                   </div>
-                  <div className="absolute right-[-10px] bottom-[-20px] text-[100px] md:text-[140px] opacity-[0.07] leading-none pointer-events-none select-none">{p.emoji}</div>
+                  <div className="absolute right-[-10px] bottom-[-20px] pointer-events-none select-none opacity-[0.08]">
+                    {p.logo_svg ? (
+                      <div className="w-32 h-32 md:w-44 md:h-44 text-white -rotate-12" dangerouslySetInnerHTML={{ __html: p.logo_svg }} />
+                    ) : (
+                      <div className="text-[100px] md:text-[140px] leading-none">{p.emoji}</div>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
@@ -922,13 +978,13 @@ export default function Home() {
         </main>
       )}
 
-      {view === 'services' && platKey && (
+      {view === 'services' && platKey && platforms[platKey] && (
         <ServicesSection
-          platKey={platKey}
+          plat={platforms[platKey]}
           onBack={goHome}
           onSelect={id => {
-            const s = findService(id);
-            if (s) { setService(s); setView('checkout'); window.scrollTo({ top: 0 }); }
+            const s = findServiceIn(id, platforms);
+            if (s) { setService(s); setView('checkout'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
           }}
         />
       )}
@@ -937,8 +993,9 @@ export default function Home() {
         <div className="bg-[#FAFAFA] min-h-screen">
           <CheckoutSection
             service={service}
-            onBack={() => { setView('services'); window.scrollTo({ top: 0 }); }}
-            onPix={(d, q) => { setPixData(d); setPixQty(q); setView('pix'); window.scrollTo({ top: 0 }); }}
+            platKey={platKey}
+            onBack={() => { setView('services'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            onPix={(d, q) => { setPixData(d); setPixQty(q); setView('pix'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           />
         </div>
       )}

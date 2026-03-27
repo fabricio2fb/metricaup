@@ -8,7 +8,7 @@ const payment = new Payment(client);
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, email, whatsapp, link, service, qty, val } = await req.json();
+    const { id, email, whatsapp, link, service, platform, qty, val } = await req.json();
 
     const body = {
       transaction_amount: Number(val),
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       status: 'Aguardando Pagamento',
     };
 
-    const { error } = await supabase.from('pedidos').insert([{ id, email, whatsapp, link, service, qty, val, ...pixData }]);
+    const { error } = await supabase.from('pedidos').insert([{ id, email, whatsapp, link, service, platform, qty, val, ...pixData }]);
     if (error) throw error;
 
     // 🔔 Push — novo pedido pendente entrando

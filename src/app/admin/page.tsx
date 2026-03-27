@@ -9,6 +9,7 @@ interface Order {
   whatsapp?: string;
   link: string;
   service: string;
+  platform?: string; // New column
   qty: number;
   val: number;
   status: string;
@@ -27,13 +28,7 @@ async function sha256(str: string) {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-const PLATFORMS = [
-  { key: 'todos', label: 'Todos', emoji: '📊', color: '#6366f1' },
-  { key: 'instagram', label: 'Instagram', emoji: '📸', color: '#e1306c' },
-  { key: 'tiktok', label: 'TikTok', emoji: '🎵', color: '#69c9d0' },
-  { key: 'facebook', label: 'Facebook', emoji: '👥', color: '#1877f2' },
-  { key: 'kwai', label: 'Kwai', emoji: '🎬', color: '#ff6b00' },
-];
+// PLATFORMS movidos para carregar do banco de dados no componente principal
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   'Aguardando Pagamento': { bg: 'bg-amber-500/10', text: 'text-amber-400', dot: 'bg-amber-400' },
@@ -57,8 +52,8 @@ function getOrderPlatform(order: Order): string {
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLES[status] || { bg: 'bg-white/10', text: 'text-white/50', dot: 'bg-white/30' };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${s.bg} ${s.text} whitespace-nowrap`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot}`} />
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${s.bg} ${s.text} whitespace-nowrap uppercase tracking-tighter`}>
+      <span className={`w-1 h-1 rounded-full flex-shrink-0 ${s.dot}`} />
       {status}
     </span>
   );
@@ -197,14 +192,253 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-// ─── STAT CARD ────────────────────────────────────────────────────────────────
+// ─── EDITOR TAB ─────────────────────────────────────────────────────────────
+function EditorTab() {
+  const [data, setData] = useState<{ platforms: any[]; services: any[]; variants: any[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedPlat, setSelectedPlat] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/services');
+      const d = await res.json();
+      setData(d);
+      if (d.platforms?.length > 0 && !selectedPlat) {
+        setSelectedPlat(d.platforms[0].id);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  }, [selectedPlat]);
+
+  useEffect(() => { loadData(); }, []);
+
+  async function updateService(id: string, update: any) {
+    setSaving(true);
+    await fetch('/api/admin/services', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'service', id, data: update })
+    });
+    await loadData();
+    setSaving(false);
+  }
+
+  async function updateVariant(id: string, update: any) {
+    setSaving(true);
+    await fetch('/api/admin/services', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'variant', id, data: update })
+    });
+    await loadData();
+    setSaving(false);
+  }
+
+  async function addVariant(serviceId: string) {
+    setSaving(true);
+    await fetch('/api/admin/services', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'add_variant',
+        data: { service_id: serviceId, qty: 100, price: 5.00, order: 99 }
+      })
+    });
+    await loadData();
+    setSaving(false);
+  }
+
+  async function deleteVariant(id: string) {
+    if (!confirm('Excluir este preço?')) return;
+    setSaving(true);
+    await fetch('/api/admin/services', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'delete_variant', id })
+    });
+    await loadData();
+    setSaving(false);
+  }
+
+  if (loading) return <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /></div>;
+  if (!data) return <div className="text-center py-12 text-white/30">Erro ao carregar dados.</div>;
+
+  const currentServices = data.services.filter(s => s.platform_id === selectedPlat);
+
+  return (
+    <div className="grid md:grid-cols-[240px_1fr] gap-6">
+      {/* Platforms List */}
+      <div className="space-y-1">
+        <div className="text-[10px] text-white/25 uppercase tracking-widest px-3 mb-2 font-bold">Plataformas</div>
+        {data.platforms.map(p => (
+          <button
+            key={p.id}
+            onClick={() => { setSelectedPlat(p.id); setSelectedService(null); }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${selectedPlat === p.id ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5'}`}
+          >
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              {p.logo_svg ? (
+                <div className="w-5 h-5 text-white" dangerouslySetInnerHTML={{ __html: p.logo_svg }} />
+              ) : (
+                <span className="text-lg">{p.emoji}</span>
+              )}
+            </div>
+            <span className="font-semibold text-xs">{p.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Services List / Editor */}
+      <div className="space-y-4">
+        {!selectedService ? (
+          <>
+            <div className="text-[10px] text-white/25 uppercase tracking-widest mb-2 font-bold px-1">Serviços Disponíveis</div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {currentServices.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => setSelectedService(s)}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left hover:border-white/20 transition-all flex items-center gap-4 group"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.icon_bg, color: s.icon_color }} dangerouslySetInnerHTML={{ __html: s.icon }} />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-sm truncate">{s.name}</div>
+                    <div className="text-[10px] text-white/20 truncate">{s.category}</div>
+                  </div>
+                  <span className="text-white/20 group-hover:text-white/40">→</span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="p-6 border-b border-white/8 flex items-center justify-between bg-white/[0.02]">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setSelectedService(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">←</button>
+                <div>
+                  <div className="text-[10px] text-white/25 uppercase tracking-widest font-bold">Editando Serviço</div>
+                  <div className="font-bold text-lg">{selectedService.name}</div>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: selectedService.icon_bg, color: selectedService.icon_color }} dangerouslySetInnerHTML={{ __html: selectedService.icon }} />
+            </div>
+
+            <div className="p-6 space-y-8">
+              {/* Basic Info */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] text-white/30 uppercase font-bold block mb-2 px-1">Nome do Serviço</label>
+                    <input
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition"
+                      value={selectedService.name}
+                      onChange={e => setSelectedService({ ...selectedService, name: e.target.value })}
+                      onBlur={() => updateService(selectedService.id, { name: selectedService.name })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-white/30 uppercase font-bold block mb-2 px-1">Descrição</label>
+                    <textarea
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition h-24 resize-none"
+                      value={selectedService.description}
+                      onChange={e => setSelectedService({ ...selectedService, description: e.target.value })}
+                      onBlur={() => updateService(selectedService.id, { description: selectedService.description })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-white/30 uppercase font-bold block mb-2 px-1">Ícone (Emoji ou SVG)</label>
+                    <input
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition"
+                      value={selectedService.icon}
+                      onChange={e => setSelectedService({ ...selectedService, icon: e.target.value })}
+                      onBlur={() => updateService(selectedService.id, { icon: selectedService.icon })}
+                    />
+                  </div>
+                </div>
+
+                {/* Variants Editor */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] text-white/30 uppercase font-bold">Tabela de Preços</label>
+                    <button onClick={() => addVariant(selectedService.id)} className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md transition-all font-bold">+ NOVO PREÇO</button>
+                  </div>
+                  <div className="space-y-2">
+                    {data.variants.filter(v => v.service_id === selectedService.id).sort((a,b) => a.order - b.order).map(v => (
+                      <div key={v.id} className="flex items-center gap-2 bg-black/20 p-2 rounded-xl group/var">
+                        <div className="flex-1 grid grid-cols-2 gap-2">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs outline-none focus:border-white/30 transition text-center font-bold"
+                              value={v.qty}
+                              onChange={e => {
+                                const newVal = parseInt(e.target.value);
+                                const updatedVariants = data.variants.map(varitem => varitem.id === v.id ? { ...varitem, qty: newVal } : varitem);
+                                setData({ ...data, variants: updatedVariants });
+                              }}
+                              onBlur={(e) => updateVariant(v.id, { qty: parseInt(e.target.value) })}
+                            />
+                            <div className="absolute -top-1.5 left-2 bg-[#111] px-1 text-[8px] text-white/20 font-bold uppercase">Qtd</div>
+                          </div>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="0.01"
+                              className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs outline-none focus:border-white/30 transition text-center font-bold text-emerald-400"
+                              value={v.price}
+                              onChange={e => {
+                                const newVal = parseFloat(e.target.value);
+                                const updatedVariants = data.variants.map(varitem => varitem.id === v.id ? { ...varitem, price: newVal } : varitem);
+                                setData({ ...data, variants: updatedVariants });
+                              }}
+                              onBlur={(e) => updateVariant(v.id, { price: parseFloat(e.target.value) })}
+                            />
+                            <div className="absolute -top-1.5 left-2 bg-[#111] px-1 text-[8px] text-white/20 font-bold uppercase">R$</div>
+                          </div>
+                        </div>
+                        <button onClick={() => deleteVariant(v.id)} className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 transition-all opacity-0 group-hover/var:opacity-100 italic font-serif">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-start gap-4">
+                <span className="text-xl">💡</span>
+                <p className="text-xs text-blue-300 leading-relaxed">
+                  As alterações são salvas <strong>automaticamente</strong> assim que você sai de um campo (onBlur). Novos preços aparecem instantaneamente na página oficial.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {saving && (
+        <div className="fixed bottom-6 right-6 bg-white text-black px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
+          <div className="w-3 h-3 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+          <span className="text-xs font-bold uppercase tracking-widest">Salvando no banco...</span>
+        </div>
+      )}
+    </div>
+  );
+}
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string | number; sub?: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-      <div className="text-xl mb-3">{icon}</div>
-      <div className="text-xl font-bold text-white mb-0.5 tracking-tight">{value}</div>
-      <div className="text-xs text-white/40 font-medium">{label}</div>
-      {sub && <div className="text-[10px] text-white/25 mt-0.5">{sub}</div>}
+    <div className="bg-[#111] border border-white/5 rounded-xl p-2.5 flex flex-col justify-between h-auto">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-sm">{icon}</span>
+        {sub && <span className="text-[8px] text-white/20 font-bold">{sub}</span>}
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs font-bold text-white truncate">{value}</div>
+        <div className="text-[9px] text-white/30 font-semibold uppercase tracking-tighter truncate">{label}</div>
+      </div>
     </div>
   );
 }
@@ -272,14 +506,23 @@ function GastosTab({ gastos, reloadGastos }: { gastos: Gasto[]; reloadGastos: ()
   async function addGasto(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await fetch('/api/gastos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ads, plataforma: plat, data: date })
-    });
-    setAds('');
-    setPlat('');
-    reloadGastos();
+    try {
+      const res = await fetch('/api/gastos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ads, plataforma: plat, data: date })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert('Erro ao salvar: ' + data.error);
+      } else {
+        setAds('');
+        setPlat('');
+        reloadGastos();
+      }
+    } catch (err: any) {
+      alert('Erro na requisição: ' + err.message);
+    }
     setSaving(false);
   }
 
@@ -357,12 +600,49 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [platFilter, setPlatFilter] = useState('todos');
-  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'gastos'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'gastos' | 'editor'>('orders');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [gastos, setGastos] = useState<Gasto[]>([]);
+  const [platformsData, setPlatformsData] = useState<any[]>([]);
+
+  // Fetch Platforms for Filter
+  useEffect(() => {
+    async function loadPlats() {
+      try {
+        const res = await fetch('/api/platforms');
+        const data = await res.json();
+        if (data && !data.error) {
+          const formatted = [
+            { key: 'todos', label: 'Todos', emoji: '📊', color: '#6366f1' },
+            ...Object.entries(data).map(([key, p]: any) => ({
+              key,
+              label: p.name,
+              emoji: p.emoji,
+              color: '#f9317a' // default color or could be extracted from gradient
+            }))
+          ];
+          setPlatformsData(formatted);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar plataformas admin:', err);
+      }
+    }
+    loadPlats();
+  }, []);
+
+  const adminPlatforms = useMemo(() => {
+    if (platformsData.length > 0) return platformsData;
+    return [
+      { key: 'todos', label: 'Todos', emoji: '📊', color: '#6366f1' },
+      { key: 'instagram', label: 'Instagram', emoji: '📸', color: '#e1306c' },
+      { key: 'tiktok', label: 'TikTok', emoji: '🎵', color: '#69c9d0' },
+      { key: 'facebook', label: 'Facebook', emoji: '👥', color: '#1877f2' },
+      { key: 'kwai', label: 'Kwai', emoji: '🎬', color: '#ff6b00' },
+    ];
+  }, [platformsData]);
 
   // Auth check
   useEffect(() => {
@@ -462,11 +742,11 @@ export default function AdminPage() {
   // Platform counts for sidebar badges
   const platCounts = useMemo(() => {
     const counts: Record<string, number> = { todos: orders.length };
-    PLATFORMS.slice(1).forEach(p => {
-      counts[p.key] = orders.filter(o => getOrderPlatform(o) === p.key).length;
+    adminPlatforms.slice(1).forEach((p: any) => {
+      counts[p.key] = orders.filter(o => (o.platform || 'instagram') === p.key).length;
     });
     return counts;
-  }, [orders]);
+  }, [orders, adminPlatforms]);
 
   // Filtered
   const filtered = useMemo(() => {
@@ -474,7 +754,7 @@ export default function AdminPage() {
       const q = search.toLowerCase();
       const matchSearch = !q || o.email?.toLowerCase().includes(q) || o.service?.toLowerCase().includes(q) || o.id?.toLowerCase().includes(q);
       const matchStatus = !statusFilter || o.status === statusFilter;
-      const matchPlat = platFilter === 'todos' || getOrderPlatform(o) === platFilter;
+      const matchPlat = platFilter === 'todos' || (o.platform || 'instagram') === platFilter;
       return matchSearch && matchStatus && matchPlat;
     });
   }, [orders, search, statusFilter, platFilter]);
@@ -499,7 +779,7 @@ export default function AdminPage() {
     return <LoginScreen onLogin={() => setAuthed(true)} />;
   }
 
-  const currentPlat = PLATFORMS.find(p => p.key === platFilter)!;
+  const currentPlat = adminPlatforms.find(p => p.key === platFilter) || adminPlatforms[0];
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex text-sm">
@@ -524,7 +804,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="p-3 border-b border-white/8">
-          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics'], ['gastos', '💸', 'Gastos']] as const).map(([id, icon, label]) => (
+          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics'], ['gastos', '💸', 'Gastos'], ['editor', '✏️', 'Editor']] as const).map(([id, icon, label]) => (
             <button
               key={id}
               onClick={() => { setActiveTab(id as any); setSidebarOpen(false); }}
@@ -539,7 +819,7 @@ export default function AdminPage() {
         {/* Platform filters */}
         <nav className="flex-1 p-3 overflow-y-auto">
           <div className="text-[10px] text-white/25 uppercase tracking-widest px-3 mb-2 font-semibold">Plataformas</div>
-          {PLATFORMS.map(p => (
+          {adminPlatforms.map(p => (
             <button
               key={p.key}
               onClick={() => { setPlatFilter(p.key); setSidebarOpen(false); }}
@@ -586,7 +866,7 @@ export default function AdminPage() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main className="flex-1 md:ml-60 min-h-screen">
+      <main className="flex-1 md:ml-60 min-h-screen max-w-full overflow-x-hidden">
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/8 px-4 md:px-7 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -597,37 +877,35 @@ export default function AdminPage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-base">{currentPlat.emoji}</span>
-                <h1 className="font-bold text-base text-white truncate">
+                <h1 className="font-bold text-[13px] md:text-base text-white truncate max-w-[120px] sm:max-w-none">
                   {platFilter === 'todos' ? 'Todos os Pedidos' : currentPlat.label}
                 </h1>
               </div>
               {lastUpdated && <p className="text-[10px] text-white/25 hidden sm:block">Atualizado {lastUpdated.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Push notification bell */}
+          <div className="flex items-center gap-1 md:gap-1.5 flex-shrink-0">
             <PushBell />
-            <button onClick={loadOrders} title="Atualizar pedidos" className="flex items-center gap-1.5 px-3 py-2 bg-white/8 hover:bg-white/12 border border-white/10 rounded-xl text-xs font-medium transition-all">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+            <button onClick={loadOrders} title="Atualizar pedidos" className="flex items-center justify-center w-8 h-8 bg-white/8 hover:bg-white/12 border border-white/10 rounded-lg transition-all">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
             </button>
-            <button onClick={testPush} title="Testar Notificações Push" className="flex items-center gap-1.5 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-xl text-xs font-medium transition-all">
+            <button onClick={testPush} title="Testar Notificações" className="hidden sm:flex items-center justify-center w-8 h-8 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-lg transition-all">
               <span>🚀</span>
             </button>
-            <button onClick={clearOrders} className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl text-xs font-medium transition-all">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-              <span className="hidden sm:inline">Limpar</span>
+            <button onClick={clearOrders} title="Limpar Pedidos" className="hidden sm:flex items-center justify-center w-8 h-8 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg transition-all">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </button>
           </div>
         </header>
 
-        <div className="p-4 md:p-7">
+        <div className="p-2 md:p-7">
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-1.5 md:gap-4 mb-5">
             <StatCard icon="📦" label="Pedidos" value={stats.total} />
-            <StatCard icon="✅" label="Aprovados" value={stats.approved} sub={`${stats.conv}% conversão`} />
-            <StatCard icon="⏳" label="Aguardando" value={stats.pending} />
-            <StatCard icon="💰" label="Receita" value={`R$ ${stats.revenue.toFixed(2).replace('.', ',')}`} />
-            <StatCard icon="📈" label="ROI" value={`R$ ${stats.roi.toFixed(2).replace('.', ',')}`} />
+            <StatCard icon="✅" label="Aprovados" value={stats.approved} sub={`${stats.conv}%`} />
+            <StatCard icon="⌛" label="Pendente" value={stats.pending} />
+            <StatCard icon="💰" label="Receita" value={`R$ ${Math.floor(stats.revenue)}`} />
+            <StatCard icon="🚀" label="ROI" value={`R$ ${Math.floor(stats.roi)}`} />
           </div>
 
           {/* ANALYTICS TAB */}
@@ -655,10 +933,13 @@ export default function AdminPage() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
                 <h2 className="font-semibold mb-4">🕐 Atividade Recente</h2>
                 <div className="space-y-2">
-                  {(platFilter === 'todos' ? orders : orders.filter(o => getOrderPlatform(o) === platFilter)).slice(0, 10).map(o => (
-                    <div key={o.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                  {(platFilter === 'todos' ? orders : orders.filter(o => (o.platform || 'instagram') === platFilter)).slice(0, 10).map(o => (
+                    <div key={o.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0 text-[11px] md:text-sm">
                       <div className="w-7 h-7 rounded-full bg-white/8 flex items-center justify-center text-sm flex-shrink-0">
-                        {getOrderPlatform(o) === 'instagram' ? '📸' : getOrderPlatform(o) === 'tiktok' ? '🎵' : getOrderPlatform(o) === 'facebook' ? '👥' : '🎬'}
+                        {(() => {
+                          const p = adminPlatforms.find(p => p.key === (o.platform || 'instagram'));
+                          return p?.emoji || '📸';
+                        })()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-white/80 text-xs font-medium truncate">{o.service}</div>
@@ -678,26 +959,31 @@ export default function AdminPage() {
             <GastosTab gastos={gastos} reloadGastos={loadGastos} />
           )}
 
+          {/* EDITOR TAB */}
+          {activeTab === 'editor' && (
+            <EditorTab />
+          )}
+
           {/* ORDERS TAB */}
           {activeTab === 'orders' && (
             <>
               {/* Filters */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex flex-col sm:flex-row gap-2 mb-4">
                 <div className="relative flex-1">
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                   <input
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-white/25 transition text-white placeholder:text-white/20"
-                    placeholder="Buscar..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm outline-none focus:border-white/25 transition text-white placeholder:text-white/20"
+                    placeholder="Buscar pedido..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                   />
                 </div>
                 <select
-                  className="bg-[#111] border border-white/10 rounded-xl px-3 py-2.5 text-xs outline-none text-white/60 flex-shrink-0"
+                  className="bg-[#111] border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white/60 flex-shrink-0 h-[42px] sm:h-auto"
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
                 >
-                  <option value="">Todos</option>
+                  <option value="">Status: Todos</option>
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
@@ -725,7 +1011,7 @@ export default function AdminPage() {
                       </thead>
                       <tbody>
                         {filtered.map(o => {
-                          const plat = PLATFORMS.find(p => p.key === getOrderPlatform(o));
+                          const plat = adminPlatforms.find(p => p.key === (o.platform || 'instagram'));
                           return (
                             <tr key={o.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
                               <td className="px-4 py-3 font-mono text-white/30 text-[10px]">{o.id}</td>
@@ -784,29 +1070,32 @@ export default function AdminPage() {
                     <div className="text-sm">Nenhum pedido</div>
                   </div>
                 ) : filtered.map(o => {
-                  const plat = PLATFORMS.find(p => p.key === getOrderPlatform(o));
+                  const plat = adminPlatforms.find(p => p.key === (o.platform || 'instagram'));
                   return (
                     <div key={o.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <span className="text-xl flex-shrink-0">{plat?.emoji}</span>
-                          <div className="min-w-0">
-                            <div className="font-medium text-white/80 text-sm truncate">{o.service}</div>
-                            <div className="text-white/30 text-xs">{o.id}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-white/90 text-sm leading-tight truncate">{o.service}</div>
+                            <div className="text-white/20 text-[10px] font-mono mt-0.5">{o.id}</div>
                           </div>
                         </div>
                         <div className="text-emerald-400 font-bold text-sm flex-shrink-0">R${Number(o.val).toFixed(2).replace('.', ',')}</div>
                       </div>
                       {/* Link do perfil */}
                       {o.link && (
-                        <a href={o.link} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-blue-400 text-xs truncate hover:text-blue-300 transition">
-                          <span>🔗</span>
-                          <span className="truncate">{o.link.replace(/^https?:\/\//, '')}</span>
-                        </a>
+                        <div className="flex items-center gap-2 bg-black/20 rounded-lg p-2">
+                          <a href={o.link} target="_blank" rel="noreferrer" className="flex-1 flex items-center gap-1.5 text-blue-400 text-[11px] truncate hover:text-blue-300 transition">
+                            <span className="flex-shrink-0">🔗</span>
+                            <span className="truncate">{o.link.replace(/^https?:\/\//, '')}</span>
+                          </a>
+                          <CopyBtn text={o.link} />
+                        </div>
                       )}
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2 pt-1">
                         <StatusBadge status={o.status} />
-                        <div className="text-white/40 text-xs">{o.qty >= 1000 ? (o.qty/1000)+'k' : o.qty} unid.</div>
+                        <div className="text-white/40 text-[10px] font-medium">{o.qty >= 1000 ? (o.qty/1000)+'k' : o.qty} unidades</div>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-white/40 text-xs truncate flex-1">{o.email}</div>
