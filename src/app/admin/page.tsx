@@ -951,6 +951,77 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
+              {/* TOP SERVIÇOS E PLATAFORMAS */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                  <h2 className="font-semibold mb-4 text-emerald-400 flex items-center gap-2">🔥 Top Serviços</h2>
+                  <div className="space-y-3">
+                    {(() => {
+                      const approved = filtered.filter(o => o.status === 'Aprovado' || o.status === 'Entregue');
+                      const sum: Record<string, { qty: number, rev: number, plat: string }> = {};
+                      approved.forEach(o => {
+                        const s = o.service || 'Outro';
+                        if(!sum[s]) sum[s] = { qty: 0, rev: 0, plat: o.platform || 'instagram' };
+                        sum[s].qty++; sum[s].rev += Number(o.val);
+                      });
+                      const top = Object.entries(sum).sort((a,b) => b[1].rev - a[1].rev).slice(0, 5);
+                      const max = top.length ? top[0][1].rev : 1;
+                      
+                      if(top.length === 0) return <div className="text-white/30 text-xs italic">Nenhuma venda aprovada ainda.</div>;
+
+                      return top.map(([name, data]) => (
+                        <div key={name} className="flex flex-col gap-1.5">
+                          <div className="flex justify-between text-[11px] md:text-sm">
+                            <span className="text-white/80 font-medium truncate pr-2">{name}</span>
+                            <span className="font-bold text-emerald-400 shrink-0">R$ {data.rev.toFixed(2).replace('.', ',')}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                             <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                               <div className="h-full bg-emerald-500 rounded-full opacity-80" style={{ width: `${(data.rev/max)*100}%` }} />
+                             </div>
+                             <span className="text-[10px] text-white/30 w-10 text-right">{data.qty} unid.</span>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                  <h2 className="font-semibold mb-4 text-[#f9317a] flex items-center gap-2">📱 Receita por Plataforma</h2>
+                  <div className="space-y-3">
+                    {(() => {
+                      const approved = filtered.filter(o => o.status === 'Aprovado' || o.status === 'Entregue');
+                      const sum: Record<string, number> = {};
+                      approved.forEach(o => {
+                        const p = o.platform || 'instagram';
+                        sum[p] = (sum[p] || 0) + Number(o.val);
+                      });
+                      const top = Object.entries(sum).sort((a,b) => b[1] - a[1]);
+                      const max = top.length ? top[0][1] : 1;
+
+                      if(top.length === 0) return <div className="text-white/30 text-xs italic">Nenhuma venda aprovada ainda.</div>;
+
+                      return top.map(([plat, rev]) => {
+                        const pInfo = adminPlatforms.find(p => p.key === plat);
+                        return (
+                          <div key={plat} className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center text-[11px] md:text-sm">
+                              <span className="text-white/80 font-medium flex items-center gap-1.5">
+                                <span>{pInfo?.emoji || '🌐'}</span> {pInfo?.label || plat}
+                              </span>
+                              <span className="font-bold text-white shrink-0">R$ {rev.toFixed(2).replace('.', ',')}</span>
+                            </div>
+                            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full opacity-80" style={{ width: `${(rev/max)*100}%`, backgroundColor: pInfo?.color || '#fff' }} />
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

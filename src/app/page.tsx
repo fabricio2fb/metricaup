@@ -411,9 +411,15 @@ function CheckoutSection({ service, platKey, utmParams, onBack, onPix }: { servi
   const isProfile = service.cat === 'seguidores';
 
   function normalizeProfileLink(raw: string): string {
-    const val = raw.trim().replace(/^@/, '');
-    if (val.startsWith('http')) return val;
-    return `https://instagram.com/${val}`;
+    let val = raw.trim().replace(/^@/, '');
+    if (val.includes('://') || val.includes('.com')) {
+      // Tenta extrair o final da URL (o username)
+      const parts = val.split('/').filter(p => p && !p.includes('.') && p !== '@');
+      if (parts.length > 0) {
+        val = parts[parts.length - 1].replace(/^@/, '').split('?')[0];
+      }
+    }
+    return val;
   }
 
   const qty: QtyOption = mode === 'grid'
@@ -490,7 +496,7 @@ function CheckoutSection({ service, platKey, utmParams, onBack, onPix }: { servi
                 <div className="text-xs text-gray-400 mb-3">Aceita link completo ou somente o @usuário</div>
                 <input
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm outline-none focus:border-gray-900 transition"
-                  placeholder="https://instagram.com/seuperfil ou @seuperfil"
+                  placeholder={`https://${platKey}.com/seuperfil ou @seuperfil`}
                   value={link}
                   onChange={e => setLink(e.target.value)}
                 />
