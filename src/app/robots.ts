@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/admin/',
     },
-    sitemap: 'https://metricaup.com.br/sitemap.xml',
+    sitemap: 'https://www.metricaup.shop/sitemap.xml',
   }
 }

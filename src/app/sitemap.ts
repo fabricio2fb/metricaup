@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
 
-const BASE = 'https://metricaup.com.br'
+const BASE = 'https://www.metricaup.shop'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: services } = await supabase
