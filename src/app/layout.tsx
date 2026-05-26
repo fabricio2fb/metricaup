@@ -12,6 +12,7 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "MetricaUp — Crescimento nas Redes Sociais",
   description: "Seguidores, curtidas e views para Instagram, TikTok, Facebook e Kwai. Entrega rápida e suporte 24h.",
+  icons: { icon: "/favicon.png", apple: "/apple-touch-icon.png" },
 };
 
 export default async function RootLayout({
@@ -42,8 +43,6 @@ export default async function RootLayout({
     <html lang="pt-BR">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/favicon.png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="theme-color" content="#f9317a" />
         <link
           href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&display=swap"
