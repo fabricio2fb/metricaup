@@ -25,6 +25,9 @@ O projeto **MetricaUp** é uma plataforma e-commerce de serviços digitais (segu
 - **Admin Afiliados**: Aba "Afiliados" no `/admin` listando todos os afiliados com contato, chave PIX, pedidos, vendas, comissão a pagar, comissão já paga e comissão pendente. Admin pode marcar comissões aprovadas como pagas após pagar via PIX. Regra visível: comissões pagas de 3 em 3 dias.
 - **Footer Social**: Adicionados botões de Instagram e TikTok no footer da home.
 - **Suporte**: Botão flutuante de WhatsApp integrado diretamente com opções de mensagens predefinidas.
+- **Sitemap & SEO**: Sitemap dinâmico (`src/app/sitemap.ts`) com todas as páginas, plataformas e serviços; `robots.ts` para orientar crawlers.
+- **Tracking Pixels**: Aba "Configurações" no `/admin` para gerenciar Facebook Pixel, Google Analytics, Google Ads e Google Tag Manager. Os códigos são injetados dinamicamente no `<head>` via `layout.tsx` (server component assíncrono) com dados da tabela `site_settings` no Supabase.
+- **Tabela `site_settings`**: Script SQL em `add_settings_table.sql` — criar manualmente no Supabase Studio para ativar o gerenciamento de pixels.
 
 ## ⚠️ Convenções Importantes
 - **Sempre ler o `AGENTS.md`** antes de começar.

@@ -733,6 +733,189 @@ function GastosTab({ gastos, reloadGastos }: { gastos: Gasto[]; reloadGastos: ()
   );
 }
 
+// ─── PIXELS / SETTINGS TAB ──────────────────────────────────────────────────
+function PixelsTab() {
+  const [settings, setSettings] = useState<Record<string, string>>({
+    facebook_pixel_id: '',
+    google_analytics_id: '',
+    google_ads_id: '',
+    google_ads_label: '',
+    google_tag_manager_id: '',
+  })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch('/api/settings')
+        const data = await res.json()
+        if (data && !data.error) {
+          setSettings({
+            facebook_pixel_id: data.facebook_pixel_id || '',
+            google_analytics_id: data.google_analytics_id || '',
+            google_ads_id: data.google_ads_id || '',
+            google_ads_label: data.google_ads_label || '',
+            google_tag_manager_id: data.google_tag_manager_id || '',
+          })
+        }
+      } catch {}
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  async function handleSave() {
+    setSaving(true)
+    setSaved(false)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      }
+    } catch {}
+    setSaving(false)
+  }
+
+  function update(key: string, val: string) {
+    setSettings(prev => ({ ...prev, [key]: val }))
+  }
+
+  if (loading) {
+    return <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /></div>
+  }
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h2 className="font-semibold text-lg">Configurações de Tracking</h2>
+        <p className="text-xs text-white/30 mt-0.5">
+          Os códigos são injetados automaticamente no &lt;head&gt; do site.
+        </p>
+      </div>
+
+      {/* Facebook Pixel */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">👤</span>
+          <div>
+            <div className="font-semibold text-sm">Facebook Pixel</div>
+            <div className="text-[10px] text-white/30">Meta Ads, conversões e remarketing</div>
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] text-white/40 uppercase font-bold block mb-1.5 px-0.5">Pixel ID</label>
+          <input
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition placeholder:text-white/20"
+            placeholder="Ex: 123456789012345"
+            value={settings.facebook_pixel_id}
+            onChange={e => update('facebook_pixel_id', e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Google Analytics */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">📊</span>
+          <div>
+            <div className="font-semibold text-sm">Google Analytics</div>
+            <div className="text-[10px] text-white/30">GA4 — medição de audiência e eventos</div>
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] text-white/40 uppercase font-bold block mb-1.5 px-0.5">Measurement ID</label>
+          <input
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition placeholder:text-white/20"
+            placeholder="Ex: G-XXXXXXXXXX"
+            value={settings.google_analytics_id}
+            onChange={e => update('google_analytics_id', e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Google Ads */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">📢</span>
+          <div>
+            <div className="font-semibold text-sm">Google Ads</div>
+            <div className="text-[10px] text-white/30">Conversões e remarketing</div>
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] text-white/40 uppercase font-bold block mb-1.5 px-0.5">Conversion ID</label>
+          <input
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition placeholder:text-white/20"
+            placeholder="Ex: AW-123456789"
+            value={settings.google_ads_id}
+            onChange={e => update('google_ads_id', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="text-[10px] text-white/40 uppercase font-bold block mb-1.5 px-0.5">Conversion Label</label>
+          <input
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition placeholder:text-white/20"
+            placeholder="Ex: ABCdEFG_H12"
+            value={settings.google_ads_label}
+            onChange={e => update('google_ads_label', e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Google Tag Manager */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">🏷️</span>
+          <div>
+            <div className="font-semibold text-sm">Google Tag Manager</div>
+            <div className="text-[10px] text-white/30">Gerenciador de tags (GTM)</div>
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] text-white/40 uppercase font-bold block mb-1.5 px-0.5">GTM ID</label>
+          <input
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50 transition placeholder:text-white/20"
+            placeholder="Ex: GTM-XXXXXXX"
+            value={settings.google_tag_manager_id}
+            onChange={e => update('google_tag_manager_id', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-[#f9317a] hover:bg-[#e0195f] text-white px-6 py-3 rounded-xl font-bold text-sm transition disabled:opacity-50 shadow-lg shadow-pink-900/20 flex items-center gap-2"
+        >
+          {saving ? (
+            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Salvando...</>
+          ) : 'Salvar Configurações'}
+        </button>
+        {saved && (
+          <span className="text-emerald-400 text-sm font-semibold animate-in fade-in">✓ Configurações salvas com sucesso!</span>
+        )}
+      </div>
+
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-start gap-3">
+        <span className="text-lg mt-0.5">💡</span>
+        <p className="text-xs text-blue-300 leading-relaxed">
+          As alterações são aplicadas instantaneamente em todo o site. 
+          Deixe os campos vazios para desabilitar cada tracking.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ─── MAIN ADMIN ───────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
@@ -742,7 +925,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [platFilter, setPlatFilter] = useState('todos');
-  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'gastos' | 'affiliates' | 'editor'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'gastos' | 'affiliates' | 'editor' | 'settings'>('orders');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -964,7 +1147,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="p-3 border-b border-white/8">
-          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics'], ['gastos', '💸', 'Gastos'], ['affiliates', '👥', 'Afiliados'], ['editor', '✏️', 'Editor']] as const).map(([id, icon, label]) => (
+          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics'], ['gastos', '💸', 'Gastos'], ['affiliates', '👥', 'Afiliados'], ['editor', '✏️', 'Editor'], ['settings', '⚙️', 'Configurações']] as const).map(([id, icon, label]) => (
             <button
               key={id}
               onClick={() => { setActiveTab(id as any); setSidebarOpen(false); }}
@@ -1198,6 +1381,11 @@ export default function AdminPage() {
           {/* EDITOR TAB */}
           {activeTab === 'editor' && (
             <EditorTab />
+          )}
+
+          {/* SETTINGS TAB */}
+          {activeTab === 'settings' && (
+            <PixelsTab />
           )}
 
           {/* ORDERS TAB */}
