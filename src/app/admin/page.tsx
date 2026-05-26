@@ -13,7 +13,29 @@ interface Order {
   qty: number;
   val: number;
   status: string;
+  affiliate_code?: string;
+  affiliate_commission_value?: number;
   created_at: string;
+}
+
+interface AffiliateAdmin {
+  code: string;
+  name?: string;
+  email?: string;
+  whatsapp?: string;
+  pix_key?: string;
+  commission_rate?: number;
+  active?: boolean;
+  created_at?: string;
+  stats: {
+    totalOrders: number;
+    approvedOrders: number;
+    pendingOrders: number;
+    revenue: number;
+    commission: number;
+    paidCommission: number;
+    pendingCommission: number;
+  };
 }
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -496,6 +518,126 @@ interface Gasto {
   plataforma: number;
 }
 
+function AffiliatesTab({ affiliates, loading, reload }: { affiliates: AffiliateAdmin[]; loading: boolean; reload: () => void }) {
+  const [payingCode, setPayingCode] = useState('');
+  const totals = affiliates.reduce((acc, affiliate) => ({
+    orders: acc.orders + affiliate.stats.totalOrders,
+    revenue: acc.revenue + affiliate.stats.revenue,
+    commission: acc.commission + affiliate.stats.commission,
+    paid: acc.paid + affiliate.stats.paidCommission,
+    pending: acc.pending + affiliate.stats.pendingCommission,
+  }), { orders: 0, revenue: 0, commission: 0, paid: 0, pending: 0 });
+
+  async function markAsPaid(affiliate: AffiliateAdmin) {
+    if (affiliate.stats.commission <= 0) return;
+    if (!confirm(`Marcar R$ ${affiliate.stats.commission.toFixed(2).replace('.', ',')} como pago para ${affiliate.name || affiliate.code}?`)) return;
+    setPayingCode(affiliate.code);
+    try {
+      const res = await fetch('/api/affiliates', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': H_TOKEN },
+        body: JSON.stringify({ code: affiliate.code }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Erro ao marcar como pago.');
+      reload();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setPayingCode('');
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-lg">Afiliados</h2>
+          <p className="text-xs text-white/30 mt-0.5">Cadastros, chave PIX e comissões. Pagamento de comissão a cada 3 dias.</p>
+        </div>
+        <button onClick={reload} className="bg-white/8 hover:bg-white/12 border border-white/10 px-4 py-2 rounded-xl text-xs font-semibold text-white/60 transition">
+          Atualizar
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard icon="👥" label="Afiliados" value={affiliates.length} />
+        <StatCard icon="📦" label="Pedidos" value={totals.orders} />
+        <StatCard icon="💰" label="Vendas" value={`R$ ${Math.floor(totals.revenue)}`} />
+        <StatCard icon="🧾" label="A pagar" value={`R$ ${Math.floor(totals.commission)}`} sub={`Pago R$ ${Math.floor(totals.paid)}`} />
+      </div>
+      <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-2xl px-4 py-3 text-xs">
+        Fluxo: venda com PIX pendente fica em "Pendente"; quando o pedido é aprovado vira "A pagar"; depois que você pagar no PIX do afiliado, clique em "Marcar pago".
+      </div>
+
+      <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+        {loading ? (
+          <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" /></div>
+        ) : affiliates.length === 0 ? (
+          <div className="py-12 text-center text-white/30 text-sm">Nenhum afiliado cadastrado ainda.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-white/8">
+                  {['Afiliado', 'Contato', 'PIX', 'Pedidos', 'Vendas', 'A pagar', 'Já pago', 'Pendente', ''].map(h => (
+                    <th key={h} className="px-4 py-3 text-left font-semibold text-white/25 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {affiliates.map(affiliate => (
+                  <tr key={affiliate.code} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="text-white/80 font-semibold">{affiliate.name || 'Sem nome'}</div>
+                      <div className="text-[#f9317a] font-bold mt-0.5">{affiliate.code}</div>
+                      <div className="text-white/25 mt-0.5">{Math.round(Number(affiliate.commission_rate || 0) * 100)}% comissão</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-white/60">{affiliate.email || '-'}</div>
+                      {affiliate.whatsapp && (
+                        <a href={`https://wa.me/55${affiliate.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-green-400 hover:text-green-300 block mt-1">
+                          {affiliate.whatsapp}
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-white/70 max-w-[180px] truncate" title={affiliate.pix_key}>{affiliate.pix_key || '-'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-white/60">
+                      <div>{affiliate.stats.totalOrders} total</div>
+                      <div className="text-emerald-400">{affiliate.stats.approvedOrders} aprovados</div>
+                      <div className="text-amber-400">{affiliate.stats.pendingOrders} pendentes</div>
+                    </td>
+                    <td className="px-4 py-3 text-emerald-400 font-semibold">R$ {affiliate.stats.revenue.toFixed(2).replace('.', ',')}</td>
+                    <td className="px-4 py-3 text-[#f9317a] font-bold">R$ {affiliate.stats.commission.toFixed(2).replace('.', ',')}</td>
+                    <td className="px-4 py-3 text-blue-400 font-semibold">R$ {affiliate.stats.paidCommission.toFixed(2).replace('.', ',')}</td>
+                    <td className="px-4 py-3 text-amber-400 font-semibold">R$ {affiliate.stats.pendingCommission.toFixed(2).replace('.', ',')}</td>
+                    <td className="px-4 py-3 space-y-2">
+                      <button
+                        onClick={() => markAsPaid(affiliate)}
+                        disabled={payingCode === affiliate.code || affiliate.stats.commission <= 0}
+                        className="block bg-[#f9317a]/10 border border-[#f9317a]/20 text-[#f9317a] hover:bg-[#f9317a]/20 disabled:opacity-30 disabled:hover:bg-[#f9317a]/10 px-3 py-1.5 rounded-lg transition whitespace-nowrap"
+                      >
+                        {payingCode === affiliate.code ? 'Marcando...' : 'Marcar pago'}
+                      </button>
+                      {affiliate.whatsapp && (
+                        <a href={`https://wa.me/55${affiliate.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${affiliate.name || ''}, sobre sua comissão de afiliado ${affiliate.code}.`)}`} target="_blank" rel="noreferrer" className="inline-flex bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 px-3 py-1.5 rounded-lg transition">
+                          WhatsApp
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── GASTOS TAB ─────────────────────────────────────────────────────────────
 function GastosTab({ gastos, reloadGastos }: { gastos: Gasto[]; reloadGastos: () => void }) {
   const [ads, setAds] = useState('');
@@ -600,12 +742,14 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [platFilter, setPlatFilter] = useState('todos');
-  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'gastos' | 'editor'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'analytics' | 'gastos' | 'affiliates' | 'editor'>('orders');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [gastos, setGastos] = useState<Gasto[]>([]);
+  const [affiliates, setAffiliates] = useState<AffiliateAdmin[]>([]);
+  const [loadingAffiliates, setLoadingAffiliates] = useState(false);
   const [platformsData, setPlatformsData] = useState<any[]>([]);
 
   // Fetch Platforms for Filter
@@ -697,12 +841,28 @@ export default function AdminPage() {
     } catch {}
   }, []);
 
+  const loadAffiliates = useCallback(async () => {
+    setLoadingAffiliates(true);
+    try {
+      const res = await fetch('/api/affiliates?admin=1', {
+        headers: { 'x-admin-token': H_TOKEN },
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setAffiliates(data);
+    } catch {
+      setAffiliates([]);
+    } finally {
+      setLoadingAffiliates(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authed) {
       loadOrders();
       loadGastos();
+      loadAffiliates();
     }
-  }, [authed, loadOrders, loadGastos]);
+  }, [authed, loadOrders, loadGastos, loadAffiliates]);
 
   async function advanceStatus(id: string, current: string) {
     const next = STATUSES[(STATUSES.indexOf(current) + 1) % STATUSES.length];
@@ -804,7 +964,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="p-3 border-b border-white/8">
-          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics'], ['gastos', '💸', 'Gastos'], ['editor', '✏️', 'Editor']] as const).map(([id, icon, label]) => (
+          {([['orders', '📦', 'Pedidos'], ['analytics', '📊', 'Analytics'], ['gastos', '💸', 'Gastos'], ['affiliates', '👥', 'Afiliados'], ['editor', '✏️', 'Editor']] as const).map(([id, icon, label]) => (
             <button
               key={id}
               onClick={() => { setActiveTab(id as any); setSidebarOpen(false); }}
@@ -1030,6 +1190,11 @@ export default function AdminPage() {
             <GastosTab gastos={gastos} reloadGastos={loadGastos} />
           )}
 
+          {/* AFFILIATES TAB */}
+          {activeTab === 'affiliates' && (
+            <AffiliatesTab affiliates={affiliates} loading={loadingAffiliates} reload={loadAffiliates} />
+          )}
+
           {/* EDITOR TAB */}
           {activeTab === 'editor' && (
             <EditorTab />
@@ -1075,7 +1240,7 @@ export default function AdminPage() {
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-white/8">
-                          {['ID', 'Plat.', 'Serviço / Link', 'Qtd', 'Valor', 'Cliente', 'Status', ''].map(h => (
+                          {['ID', 'Plat.', 'Serviço / Link', 'Qtd', 'Valor', 'Cliente', 'Afiliado', 'Status', ''].map(h => (
                             <th key={h} className="px-4 py-3 text-left font-semibold text-white/25 uppercase tracking-wider">{h}</th>
                           ))}
                         </tr>
@@ -1111,6 +1276,16 @@ export default function AdminPage() {
                                   >
                                     <span>💬</span> {o.whatsapp}
                                   </a>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {o.affiliate_code ? (
+                                  <div>
+                                    <div className="text-[#f9317a] text-xs font-bold">{o.affiliate_code}</div>
+                                    <div className="text-white/25 text-[10px]">R${Number(o.affiliate_commission_value || 0).toFixed(2).replace('.', ',')}</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-white/15 text-xs">-</span>
                                 )}
                               </td>
                               <td className="px-4 py-3">
@@ -1181,6 +1356,12 @@ export default function AdminPage() {
                           </a>
                         )}
                       </div>
+                      {o.affiliate_code && (
+                        <div className="flex items-center justify-between gap-2 bg-pink-500/10 border border-pink-500/15 rounded-lg px-3 py-2">
+                          <span className="text-[#f9317a] text-xs font-bold">Afiliado {o.affiliate_code}</span>
+                          <span className="text-white/50 text-xs">R${Number(o.affiliate_commission_value || 0).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <select value={o.status} onChange={e => setStatus(o.id, e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/50 outline-none" style={{ backgroundColor: '#1a1a1a' }}>
                           {STATUSES.map(s => <option key={s} value={s} style={{ backgroundColor: '#111' }}>{s}</option>)}

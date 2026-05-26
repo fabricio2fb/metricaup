@@ -6,10 +6,34 @@ import { sendUTMifyEvent } from '@/lib/utmify';
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
 const payment = new Payment(client);
+const AFFILIATE_COMMISSION_RATE = 0.10;
+
+function sanitizeAffiliateCode(value: unknown) {
+  return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 24);
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, email, whatsapp, link, service, platform, qty, val, utmParams } = await req.json();
+    const { id, email, whatsapp, link, service, platform, qty, val, utmParams, affiliateCode } = await req.json();
+    const cleanAffiliateCode = sanitizeAffiliateCode(affiliateCode);
+    let affiliateCommissionRate = cleanAffiliateCode ? AFFILIATE_COMMISSION_RATE : 0;
+
+    if (cleanAffiliateCode) {
+      const { data: affiliate } = await supabase
+        .from('affiliates')
+        .select('commission_rate')
+        .eq('code', cleanAffiliateCode)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (affiliate?.commission_rate !== undefined && affiliate?.commission_rate !== null) {
+        affiliateCommissionRate = Number(affiliate.commission_rate);
+      }
+    }
+
+    const affiliateCommissionValue = cleanAffiliateCode
+      ? Number((Number(val) * affiliateCommissionRate).toFixed(2))
+      : 0;
 
     const body = {
       transaction_amount: Number(val),
@@ -34,7 +58,10 @@ export async function POST(req: NextRequest) {
       utm_medium: utmParams?.medium,
       utm_campaign: utmParams?.campaign,
       utm_content: utmParams?.content,
-      utm_term: utmParams?.term
+      utm_term: utmParams?.term,
+      affiliate_code: cleanAffiliateCode || null,
+      affiliate_commission_rate: affiliateCommissionRate,
+      affiliate_commission_value: affiliateCommissionValue
     }]);
     if (error) throw error;
 

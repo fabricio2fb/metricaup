@@ -396,7 +396,7 @@ function RefundPolicyModal({ onClose }: { onClose: () => void }) {
 }
 
 // ===== CHECKOUT SECTION =====
-function CheckoutSection({ service, platKey, utmParams, onBack, onPix }: { service: Service; platKey: string; utmParams: any; onBack: () => void; onPix: (d: { payment_id: number; qr_code_base64: string; qr_code_texto: string }, q: QtyOption) => void }) {
+function CheckoutSection({ service, platKey, utmParams, affiliateCode, onBack, onPix }: { service: Service; platKey: string; utmParams: any; affiliateCode: string; onBack: () => void; onPix: (d: { payment_id: number; qr_code_base64: string; qr_code_texto: string }, q: QtyOption) => void }) {
   const [qtyIdx, setQtyIdx] = useState(0);
   const [mode, setMode] = useState<'grid' | 'custom'>('grid');
   const [customVal, setCustomVal] = useState('');
@@ -457,7 +457,8 @@ function CheckoutSection({ service, platKey, utmParams, onBack, onPix }: { servi
           platform: platKey,
           qty: qty.q,
           val: qty.p,
-          utmParams
+          utmParams,
+          affiliateCode
         }),
       });
       const d = await res.json();
@@ -788,6 +789,273 @@ const PLAT_CLASSES: Record<string, string> = {
   kwai: 'from-orange-500 to-amber-400',
 };
 
+const SOCIAL_LINKS = {
+  instagram: 'https://www.instagram.com/metricaup.shop',
+  tiktok: 'https://www.tiktok.com/@metricaup.shop',
+};
+
+const AFFILIATE_STORAGE_KEY = 'metricaup_affiliate_code';
+const AFFILIATE_EMAIL_STORAGE_KEY = 'metricaup_affiliate_email';
+const AFFILIATE_COMMISSION_RATE = 10;
+
+function sanitizeAffiliateCode(value: string) {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 24);
+}
+
+type AffiliateDashboard = {
+  affiliate: {
+    code: string;
+    name?: string;
+    email?: string;
+    commission_rate?: number;
+  };
+  stats: {
+    totalOrders: number;
+    approvedOrders: number;
+    pendingOrders: number;
+    revenue: number;
+    commission: number;
+    paidCommission: number;
+    pendingCommission: number;
+  };
+  orders: Array<{
+    id: string;
+    service: string;
+    val: number;
+    status: string;
+    affiliate_commission_value: number;
+    affiliate_payment_status?: string;
+    affiliate_paid_at?: string;
+    created_at: string;
+  }>;
+};
+
+function AffiliateSidebarButton({ activeCode, onOpen }: { activeCode: string; onOpen: () => void }) {
+  return (
+    <button
+      onClick={onOpen}
+      className="fixed left-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 bg-[#0f0e0c] hover:bg-[#f9317a] text-white border border-white/10 shadow-xl rounded-r-2xl px-2.5 md:px-3 py-3 md:py-4 transition group"
+      title="Área de afiliados"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-4 h-4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+      <span className="[writing-mode:vertical-rl] rotate-180 text-xs font-bold tracking-wide">Afiliados</span>
+      {activeCode && <span className="absolute -right-2 -top-2 w-3 h-3 rounded-full bg-[#f9317a] ring-2 ring-white" />}
+    </button>
+  );
+}
+
+function AffiliateModal({
+  activeCode,
+  onClose,
+  onAuthenticated,
+}: {
+  activeCode: string;
+  onClose: () => void;
+  onAuthenticated: (code: string, email: string) => void;
+}) {
+  const [mode, setMode] = useState<'login' | 'register'>(activeCode ? 'login' : 'register');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [pixKey, setPixKey] = useState('');
+  const [dashboard, setDashboard] = useState<AffiliateDashboard | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedEmail = localStorage.getItem(AFFILIATE_EMAIL_STORAGE_KEY) || '';
+    if (storedEmail && !loginEmail) setLoginEmail(storedEmail);
+  }, [loginEmail]);
+
+  const dashboardCode = dashboard?.affiliate.code || activeCode;
+  const affiliateUrl = typeof window === 'undefined' || !dashboardCode
+    ? ''
+    : `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(dashboardCode)}`;
+
+  async function loginAffiliate(e?: React.FormEvent) {
+    e?.preventDefault();
+    const cleanEmail = loginEmail.trim().toLowerCase();
+    if (!cleanEmail.includes('@')) {
+      setError('Informe o e-mail cadastrado.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/affiliates?email=${encodeURIComponent(cleanEmail)}`);
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Erro ao entrar.');
+      setDashboard(data);
+      onAuthenticated(data.affiliate.code, cleanEmail);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function registerAffiliate(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/affiliates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          whatsapp,
+          pixKey,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Erro ao cadastrar.');
+      setDashboard(data);
+      setLoginEmail(data.affiliate.email || email);
+      onAuthenticated(data.affiliate.code, data.affiliate.email || email);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copyAffiliateLink() {
+    if (!affiliateUrl) return;
+    navigator.clipboard.writeText(affiliateUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between gap-4">
+          <div>
+            <div className="font-bold text-xl text-gray-900 font-clash">Área de Afiliados</div>
+            <div className="text-xs text-gray-400 mt-1">Cadastre, entre e acompanhe suas indicações.</div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition">×</button>
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+          {!dashboard ? (
+            <>
+              <div className="grid grid-cols-2 bg-gray-100 rounded-2xl p-1 mb-6">
+                <button onClick={() => { setMode('register'); setError(''); }} className={`py-3 rounded-xl text-sm font-bold transition ${mode === 'register' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'}`}>Minicadastro</button>
+                <button onClick={() => { setMode('login'); setError(''); }} className={`py-3 rounded-xl text-sm font-bold transition ${mode === 'login' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'}`}>Já sou afiliado</button>
+              </div>
+
+              {mode === 'register' ? (
+                <form onSubmit={registerAffiliate} className="space-y-3">
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo" className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50" />
+                    <input value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail" type="email" className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50" />
+                    <input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="WhatsApp" className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50" />
+                    <input value={pixKey} onChange={e => setPixKey(e.target.value)} placeholder="Chave PIX para pagamento" className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50" />
+                  </div>
+                  <button disabled={loading} className="w-full bg-[#0f0e0c] hover:bg-[#f9317a] disabled:opacity-60 text-white py-3.5 rounded-2xl text-sm font-bold transition">
+                    {loading ? 'Criando cadastro...' : 'Criar conta de afiliado'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={loginAffiliate} className="space-y-3">
+                  <input value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="E-mail cadastrado" type="email" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#f9317a]/50" />
+                  <button disabled={loading} className="w-full bg-[#0f0e0c] hover:bg-[#f9317a] disabled:opacity-60 text-white py-3.5 rounded-2xl text-sm font-bold transition">
+                    {loading ? 'Entrando...' : 'Entrar no mini dashboard'}
+                  </button>
+                </form>
+              )}
+
+              {error && <div className="mt-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl px-4 py-3">{error}</div>}
+            </>
+          ) : (
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm text-gray-400">Afiliado</div>
+                  <div className="font-bold text-2xl text-gray-900">{dashboard.affiliate.name || dashboard.affiliate.code}</div>
+                  <div className="text-xs text-[#f9317a] font-bold mt-1">{dashboard.affiliate.code}</div>
+                </div>
+                <button onClick={copyAffiliateLink} className="bg-[#0f0e0c] hover:bg-[#f9317a] text-white px-5 py-3 rounded-xl text-sm font-bold transition">
+                  {copied ? 'Link copiado' : 'Copiar link'}
+                </button>
+                <a
+                  href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Olá! Sou afiliado ${dashboard.affiliate.code} e preciso de suporte.`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-3 rounded-xl text-sm font-bold transition"
+                >
+                  WhatsApp
+                </a>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-xs text-gray-500 truncate">{affiliateUrl}</div>
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 text-xs text-amber-700 font-medium">
+                As comissões são pagas de 3 em 3 dias. Vendas com pagamento pendente aparecem como "A liberar"; após a confirmação do pedido, entram em "Comissão disponível".
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  ['Pedidos', dashboard.stats.totalOrders],
+                  ['Aprovados', dashboard.stats.approvedOrders],
+                  ['Pendentes', dashboard.stats.pendingOrders],
+                  ['Faturamento', formatPrice(dashboard.stats.revenue)],
+                  ['Disponível', formatPrice(dashboard.stats.commission)],
+                  ['Já pago', formatPrice(dashboard.stats.paidCommission)],
+                  ['A liberar', formatPrice(dashboard.stats.pendingCommission)],
+                ].map(([label, value]) => (
+                  <div key={label} className="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-400 font-bold mb-1">{label}</div>
+                    <div className="font-bold text-gray-900 text-lg">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <div className="font-bold text-gray-900 text-sm mb-3">Últimas indicações</div>
+                <div className="space-y-2">
+                  {dashboard.orders.length === 0 ? (
+                    <div className="text-sm text-gray-400 bg-gray-50 border border-gray-100 rounded-2xl p-4 text-center">Nenhum pedido indicado ainda.</div>
+                  ) : dashboard.orders.map(order => (
+                    <div key={order.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-2xl px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-800 text-sm truncate">{order.service}</div>
+                        <div className="text-xs text-gray-400">{order.id}</div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className={`inline-flex mb-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          order.status === 'Aguardando Pagamento'
+                            ? 'bg-amber-50 text-amber-600'
+                            : order.affiliate_payment_status === 'paid'
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'bg-emerald-50 text-emerald-600'
+                        }`}>
+                          {order.status === 'Aguardando Pagamento'
+                            ? 'Pagamento pendente'
+                            : order.affiliate_payment_status === 'paid'
+                              ? 'Comissão paga'
+                              : 'Pagamento efetuado'}
+                        </div>
+                        <div className="text-sm font-bold text-gray-900">{formatPrice(Number(order.val || 0))}</div>
+                        <div className="text-xs text-[#f9317a] font-semibold">{formatPrice(Number(order.affiliate_commission_value || 0))}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [platforms, setPlatforms] = useState<Record<string, Platform>>({});
   const [loadingPlat, setLoadingPlat] = useState(true);
@@ -814,10 +1082,16 @@ export default function Home() {
   const [pixQty, setPixQty] = useState<QtyOption | null>(null);
   const [tracking, setTracking] = useState(false);
   const [utmParams, setUtmParams] = useState<any>({});
+  const [affiliateCode, setAffiliateCode] = useState('');
+  const [affiliateModalOpen, setAffiliateModalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search);
+      const refCode = sanitizeAffiliateCode(
+        sp.get('ref') || sp.get('af') || sp.get('affiliate') || sp.get('afiliado') || ''
+      );
+      const storedCode = sanitizeAffiliateCode(localStorage.getItem(AFFILIATE_STORAGE_KEY) || '');
       const params = {
         source: sp.get('utm_source') || '',
         medium: sp.get('utm_medium') || '',
@@ -825,9 +1099,23 @@ export default function Home() {
         content: sp.get('utm_content') || '',
         term: sp.get('utm_term') || ''
       };
+      if (refCode) {
+        localStorage.setItem(AFFILIATE_STORAGE_KEY, refCode);
+        setAffiliateCode(refCode);
+      } else if (storedCode) {
+        setAffiliateCode(storedCode);
+      }
       setUtmParams(params);
     }
   }, []);
+
+  function saveAffiliateSession(code: string, email?: string) {
+    const cleanCode = sanitizeAffiliateCode(code);
+    if (!cleanCode) return;
+    localStorage.setItem(AFFILIATE_STORAGE_KEY, cleanCode);
+    if (email) localStorage.setItem(AFFILIATE_EMAIL_STORAGE_KEY, email.trim().toLowerCase());
+    setAffiliateCode(cleanCode);
+  }
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).fbq) {
@@ -871,6 +1159,14 @@ export default function Home() {
       {tracking && <TrackingModal onClose={() => setTracking(false)} />}
       <SalesToast />
       <WhatsAppSupport />
+      <AffiliateSidebarButton activeCode={affiliateCode} onOpen={() => setAffiliateModalOpen(true)} />
+      {affiliateModalOpen && (
+        <AffiliateModal
+          activeCode={affiliateCode}
+          onClose={() => setAffiliateModalOpen(false)}
+          onAuthenticated={saveAffiliateSession}
+        />
+      )}
 
       {/* VIEWS */}
       {view === 'home' && (
@@ -985,7 +1281,7 @@ export default function Home() {
           </section>
 
           {/* Footer */}
-          <footer className="border-t border-gray-100 py-10 text-center bg-white">
+          <footer className="border-t border-gray-100 py-10 text-center bg-white px-5">
             <div className="inline-flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
@@ -993,6 +1289,16 @@ export default function Home() {
               <span className="font-bold text-lg font-clash">Metrica<span className="text-[#f9317a]">Up</span></span>
             </div>
             <p className="text-sm text-gray-400 mb-4">© 2025 MetricaUp. Todos os direitos reservados.</p>
+            <div className="flex justify-center gap-3 mb-6">
+              <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-gray-200 bg-white hover:border-[#f9317a]/40 hover:text-[#f9317a] px-4 py-2 rounded-full text-sm font-semibold text-gray-500 transition">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.247 2.242 1.308 3.607.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.061 1.365-.333 2.632-1.308 3.607-.975.975-2.242 1.247-3.607 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.365-.061-2.632-.333-3.607-1.308-.975-.975-1.247-2.242-1.308-3.607-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.062-1.366.334-2.633 1.308-3.608.975-.975 2.242-1.247 3.608-1.308 1.266-.058 1.645-.07 4.85-.07zm0 3.675c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162z"/></svg>
+                Instagram
+              </a>
+              <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-gray-200 bg-white hover:border-gray-900 hover:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold text-gray-500 transition">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.6-4.12-1.31a6.417 6.417 0 01-1.87-1.49v6.52c-.03 2.1-.79 4.21-2.3 5.79-1.88 1.88-4.7 2.41-7.1 1.34-2.58-1.02-4.22-3.83-3.86-6.6.14-1.93 1.3-3.79 3.03-4.66 1.04-.54 2.22-.72 3.39-.54V13.1c-.88-.16-1.82-.04-2.6.4-.85.45-1.44 1.37-1.5 2.33-.14 1.25.68 2.5 1.84 2.92 1.22.46 2.7.2 3.6-.66.68-.7 1.04-1.68 1.02-2.65V.02z"/></svg>
+                TikTok
+              </a>
+            </div>
             <div className="flex justify-center gap-6">
               {['Termos de Uso', 'Privacidade', 'Contato'].map(l => <a key={l} href="#" className="text-sm text-gray-400 hover:text-gray-700 transition">{l}</a>)}
             </div>
@@ -1017,6 +1323,7 @@ export default function Home() {
             service={service}
             platKey={platKey}
             utmParams={utmParams}
+            affiliateCode={affiliateCode}
             onBack={() => { setView('services'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             onPix={(d, q) => { setPixData(d); setPixQty(q); setView('pix'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           />
